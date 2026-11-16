@@ -1,0 +1,14 @@
+{
+  "name": "pickd",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PickD test app for iPhone",
+  "dependencies": {
+    "@capacitor/core": "8.6.0",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/status-bar": "8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0"
+  }
+}

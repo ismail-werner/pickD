@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PickD</title>
+<meta name="description" content="A social app built from the interests you pick.">
+<meta name="theme-color" content="#0F0F14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PickD">
+<link rel="preload" href="fonts/plus-jakarta-sans-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plus-jakarta-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"Plus Jakarta Sans";src:url(fonts/plus-jakarta-sans-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Plus Jakarta Sans";src:url(fonts/plus-jakarta-sans-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+body{margin:0;overscroll-behavior:none}
+img,video{-webkit-touch-callout:none}
+[hidden]{display:none!important}
+.install{position:absolute;left:12px;right:12px;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:45;display:flex;gap:12px;align-items:center;
+  background:#17171F;border:1px solid rgb(255 210 63 / .35);border-radius:16px;padding:12px 8px 12px 16px;box-shadow:0 8px 24px -8px rgb(0 0 0 / .6);color:#F5F5F7;font-size:13px}
+.install b{display:block;font-size:15px}
+.install svg{width:20px;height:20px;vertical-align:-4px;stroke:#FFD23F}
+.install .x{flex:none;width:44px;height:44px;display:grid;place-items:center}
+</style>
+<style>
+/* Layout: one phone screen. Home = full-screen For you (TikTok) or a Following timeline with stories (X + Instagram).
+   Bottom tab bar in the thumb zone. 60/30/10: near-black base, white text at three opacities, PickD yellow as the 10% accent.
+   Type: one family, two weights (500, 700), four sizes (13, 15, 20, 32). Spacing on a 4/8 grid. */
+:root{
+  --bg:#0F0F14; --surface:#17171F; --raised:#20202B; --line:rgb(255 255 255 / .08);
+  --ink:rgb(245 245 247); --ink-2:rgb(245 245 247 / .8); --ink-3:rgb(245 245 247 / .62);
+  --accent:#FFD23F; --accent-ink:#17150A; --accent-5:rgb(255 210 63 / .08);
+  --like:#FF4D6D; --repost:#2FD28A; --danger:#FF8A8A;
+  --f:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --t1:32px; --t2:20px; --t3:15px; --t4:13px;
+  --r1:12px; --r2:16px; --r3:24px;
+  --gl:max(16px,env(safe-area-inset-left,0px)); --gr:max(16px,env(safe-area-inset-right,0px));
+  --shadow:0 8px 24px -8px rgb(0 0 0 / .6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font:500 var(--t3)/1.45 var(--f);-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+b,strong,h1,h2,h3{font-weight:700}
+.app{height:100%;max-width:480px;margin:0 auto;display:grid;grid-template-rows:minmax(0,1fr) auto;position:relative;background:var(--bg);overflow:hidden}
+.view{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.view::-webkit-scrollbar{display:none}
+.pad{padding-left:var(--gl);padding-right:var(--gr)}
+.muted{color:var(--ink-3)}
+.num{font-variant-numeric:tabular-nums}
+
+/* nav */
+nav.tabs{display:flex;align-items:center;justify-content:space-around;background:rgb(15 15 20 / .92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);padding:4px var(--gr) calc(4px + env(safe-area-inset-bottom,0px)) var(--gl);position:relative;z-index:6}
+nav.tabs button{position:relative;display:grid;place-items:center;width:56px;height:52px;color:var(--ink-3)}
+nav.tabs button svg{width:26px;height:26px}
+nav.tabs button[aria-current="page"]{color:var(--ink)}
+nav.tabs button[aria-current="page"] svg{stroke-width:2.4}
+nav.tabs .create{width:52px;height:36px;border-radius:var(--r1);background:var(--accent);color:var(--accent-ink);box-shadow:inset 0 1px 0 rgb(255 255 255 / .5),0 6px 20px -6px rgb(255 210 63 / .5)}
+nav.tabs .create svg{width:22px;height:22px;stroke-width:2.6}
+.badge{position:absolute;top:8px;right:8px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--like);color:#fff;font:700 11px/18px var(--f);text-align:center;box-shadow:0 0 0 2px var(--bg)}
+.nav-av{width:28px;height:28px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font:700 var(--t4) var(--f);background:hsl(var(--h,50) 45% 40%);color:#fff}
+nav.tabs button[aria-current="page"] .nav-av{box-shadow:0 0 0 2px var(--ink)}
+.nav-av img{width:100%;height:100%;object-fit:cover}
+
+/* top switcher over the feed */
+.topbar{position:absolute;inset:0 0 auto;z-index:4;display:flex;justify-content:center;align-items:center;gap:24px;
+  padding:calc(8px + env(safe-area-inset-top,0px)) var(--gr) 8px var(--gl);background:linear-gradient(rgb(10 10 14 / .6),transparent);pointer-events:none}
+.topbar>*{pointer-events:auto}
+.topbar.solid{position:sticky;top:0;background:rgb(15 15 20 / .9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.topbar .logo{position:absolute;left:var(--gl);top:calc(8px + env(safe-area-inset-top,0px));height:44px;display:flex;align-items:center}
+.logo{font:700 var(--t2)/1 var(--f);letter-spacing:-.02em;margin:0}
+.logo span{background:var(--accent);color:var(--accent-ink);padding:0 4px;border-radius:4px 8px 4px 8px;margin-left:1px}
+.seg{display:flex;gap:20px}
+.seg button{height:44px;color:var(--ink-3);font-weight:700;position:relative}
+.seg button[aria-pressed="true"]{color:var(--ink)}
+.seg button[aria-pressed="true"]::after{content:"";position:absolute;left:25%;right:25%;bottom:6px;height:3px;border-radius:2px;background:var(--ink)}
+
+/* For you: full-screen slides */
+.feed{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;position:relative}
+.feed::-webkit-scrollbar{display:none}
+.slide{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;overflow:hidden;isolation:isolate;
+  background:radial-gradient(120% 80% at 20% 15%,hsl(var(--h) 55% 30%),hsl(var(--h) 40% 12%) 70%)}
+.slide>.media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;background:#000}
+.slide::after{content:"";position:absolute;inset:auto 0 0;height:55%;z-index:-1;background:linear-gradient(transparent,rgb(6 6 10 / .9));pointer-events:none}
+.poster{position:absolute;left:var(--gl);right:calc(var(--gr) + 64px);top:50%;transform:translateY(-58%);
+  font:700 var(--t1)/1.15 var(--f);letter-spacing:-.02em;text-wrap:balance;color:#fff;overflow-wrap:anywhere;white-space:pre-wrap;
+  display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;overflow:hidden}
+.rail{position:absolute;right:calc(var(--gr) - 4px);bottom:104px;display:grid;gap:12px;justify-items:center;z-index:2}
+.rail>button{display:grid;justify-items:center;gap:0;font:700 var(--t4)/1.2 var(--f);color:#fff;text-shadow:0 1px 4px rgb(0 0 0 / .5);min-width:48px;min-height:48px;font-variant-numeric:tabular-nums}
+.rail svg{width:30px;height:30px;filter:drop-shadow(0 1px 3px rgb(0 0 0 / .45))}
+.rail [data-like][aria-pressed="true"] svg{fill:var(--like);stroke:var(--like)}
+.rail [data-repost][aria-pressed="true"] svg{stroke:var(--repost)}
+.rail [data-save][aria-pressed="true"] svg{fill:var(--accent);stroke:var(--accent)}
+@media (prefers-reduced-motion:no-preference){
+  [data-like][aria-pressed="true"] svg{animation:pump .35s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes pump{0%{transform:scale(.6)}100%{transform:scale(1)}}
+}
+.av{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:700 var(--t2) var(--f);overflow:hidden;flex:none;
+  background:hsl(var(--h,50) 45% 40%);color:#fff}
+.av img{width:100%;height:100%;object-fit:cover}
+.av.sm{width:40px;height:40px;font-size:var(--t3)}
+.av.xs{width:24px;height:24px;font-size:11px}
+.rail .av{box-shadow:0 0 0 2px #fff}
+.av-wrap{position:relative;padding-bottom:12px}
+.follow-dot{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:24px;height:24px;border-radius:50%;
+  background:var(--like);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 2px var(--bg)}
+.follow-dot svg{width:14px;height:14px;stroke-width:3}
+.caption{position:absolute;left:var(--gl);right:calc(var(--gr) + 64px);bottom:24px;z-index:2;display:grid;gap:8px;color:#fff;text-shadow:0 1px 4px rgb(0 0 0 / .55)}
+.caption .who{justify-self:start;display:flex;align-items:center;gap:8px;font-weight:700;min-height:44px}
+.caption .who .muted{color:rgb(255 255 255 / .7);font-weight:500}
+.caption p{margin:0;overflow-wrap:anywhere;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;color:rgb(255 255 255 / .9)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:4px;font:700 var(--t4)/1 var(--f);height:28px;padding:0 12px;border-radius:14px;
+  background:rgb(255 255 255 / .14);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;text-shadow:none}
+.chip.accent{background:var(--accent);color:var(--accent-ink)}
+.why{font-size:var(--t4);color:rgb(255 255 255 / .72)}
+.mute{position:absolute;top:calc(64px + env(safe-area-inset-top,0px));right:var(--gr);z-index:3;width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;background:rgb(0 0 0 / .35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff}
+.mute svg{width:20px;height:20px}
+.burst{position:absolute;left:50%;top:45%;width:120px;height:120px;margin:-60px 0 0 -60px;z-index:5;pointer-events:none}
+.burst svg{width:100%;height:100%;fill:var(--like);stroke:none;filter:drop-shadow(0 8px 24px rgb(255 77 109 / .6))}
+@media (prefers-reduced-motion:no-preference){.burst{animation:pop .75s cubic-bezier(.2,1.4,.4,1) forwards}
+  @keyframes pop{0%{transform:scale(.2) rotate(-12deg);opacity:0}30%{transform:scale(1.15) rotate(6deg);opacity:1}100%{transform:scale(1) translateY(-40px);opacity:0}}}
+.endslide,.breakslide{display:grid;place-content:center;justify-items:center;gap:16px;text-align:center;background:var(--bg)}
+.endslide::after,.breakslide::after{display:none}
+.endslide h2,.breakslide h2{font:700 var(--t1)/1.1 var(--f);margin:0;letter-spacing:-.02em;text-wrap:balance}
+.endslide p,.breakslide p{margin:0;color:var(--ink-3);max-width:30ch}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:22px;font-weight:700;
+  background:var(--accent);color:var(--accent-ink);box-shadow:inset 0 1px 0 rgb(255 255 255 / .45)}
+.btn.ghost{background:var(--raised);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.sm{height:36px;padding:0 16px;border-radius:18px;font-size:var(--t4)}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+@media (prefers-reduced-motion:no-preference){.btn,.icon-btn{transition:transform .12s}.btn:active,.icon-btn:active{transform:scale(.96)}}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+
+/* Following timeline */
+.stories{display:flex;gap:16px;overflow-x:auto;padding:16px var(--gr) 16px var(--gl);scrollbar-width:none;border-bottom:1px solid var(--line)}
+.stories::-webkit-scrollbar{display:none}
+.st{display:grid;justify-items:center;gap:4px;width:68px;flex:none;font-size:var(--t4);color:var(--ink-2)}
+.st span:last-child{max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ring{width:68px;height:68px;border-radius:50%;padding:3px;background:conic-gradient(from 200deg,var(--accent),#FF8A3D,var(--like),var(--accent));position:relative}
+.ring.seen{background:var(--raised)}
+.ring .av{width:100%;height:100%;box-shadow:0 0 0 3px var(--bg)}
+.ring .plus{position:absolute;right:0;bottom:0;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 0 0 3px var(--bg)}
+.ring .plus svg{width:14px;height:14px;stroke-width:3}
+.ring.add{background:none}
+.composer{display:flex;gap:12px;align-items:center;padding:16px var(--gr) 16px var(--gl);border-bottom:1px solid var(--line);width:100%;text-align:left}
+.composer .fake{flex:1;color:var(--ink-3)}
+.tw{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;padding:16px var(--gr) 12px var(--gl);border-bottom:1px solid var(--line);position:relative}
+.tw.open{cursor:pointer}
+.tw .ctx{grid-column:2;display:flex;align-items:center;gap:6px;font-size:var(--t4);color:var(--ink-3);margin-bottom:-6px}
+.tw .ctx svg{width:14px;height:14px}
+.tw-body{min-width:0;display:grid;gap:8px}
+.tw-head{display:flex;align-items:baseline;gap:6px;min-width:0;font-size:var(--t3)}
+.tw-head b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+.tw-head .muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tw-text{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink-2)}
+.tw-media{border-radius:var(--r2);overflow:hidden;border:1px solid var(--line);background:#000;max-height:440px;display:grid}
+.tw-media img,.tw-media video{width:100%;max-height:440px;object-fit:cover;display:block}
+.quote{border:1px solid var(--line);border-radius:var(--r2);padding:12px;display:grid;gap:6px;background:var(--accent-5);text-align:left;width:100%}
+.quote .tw-head{font-size:var(--t4)}
+.quote .tw-text{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;font-size:var(--t4)}
+.acts{display:flex;justify-content:space-between;max-width:320px;margin-left:-10px}
+.icon-btn{display:inline-flex;align-items:center;gap:4px;min-width:44px;height:40px;padding:0 10px;border-radius:20px;color:var(--ink-3);font-size:var(--t4);font-variant-numeric:tabular-nums}
+.icon-btn svg{width:19px;height:19px}
+.icon-btn[data-like][aria-pressed="true"]{color:var(--like)} .icon-btn[data-like][aria-pressed="true"] svg{fill:var(--like)}
+.icon-btn[data-repost][aria-pressed="true"]{color:var(--repost)}
+.icon-btn[data-save][aria-pressed="true"]{color:var(--accent)} .icon-btn[data-save][aria-pressed="true"] svg{fill:var(--accent)}
+.tag-chip{justify-self:start;display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:12px;font-size:var(--t4);font-weight:700;
+  color:hsl(var(--h) 80% 78%);background:hsl(var(--h) 60% 50% / .14)}
+.more{position:absolute;top:8px;right:calc(var(--gr) - 8px);width:44px;height:44px;display:grid;place-items:center;color:var(--ink-3)}
+.more svg{width:18px;height:18px}
+
+/* Pics & vids: Instagram-style cards */
+.ig{border-bottom:1px solid var(--line);padding-bottom:12px}
+.ig-head{display:flex;align-items:center;gap:12px;padding:8px var(--gr) 8px var(--gl);min-height:56px}
+.ig-av{width:36px;height:36px;font-size:var(--t4);box-shadow:0 0 0 2px var(--bg),0 0 0 4px rgb(255 210 63 / .55)}
+.ig-who{flex:1;min-width:0;line-height:1.25}
+.ig-who>button:first-child{min-height:24px}
+.ig-who .muted{display:block;font-size:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ig-follow{color:var(--accent);font-weight:700}
+.ig-more{width:44px;height:44px;display:grid;place-items:center;color:var(--ink-2);margin-right:-12px}
+.ig-more svg{width:20px;height:20px}
+.ig-media{position:relative;aspect-ratio:4/5;background:#000;overflow:hidden;max-height:600px}
+.ig-media img,.ig-media video{width:100%;height:100%;object-fit:cover;display:block}
+.ig-mute{top:auto;bottom:12px;right:12px;width:36px;height:36px}
+.ig-acts{display:flex;align-items:center;gap:4px;padding:4px calc(var(--gr) - 10px) 0 calc(var(--gl) - 10px)}
+.ig-btn{width:44px;height:44px;display:grid;place-items:center;color:var(--ink)}
+.ig-btn svg{width:26px;height:26px}
+.ig-btn[data-like][aria-pressed="true"]{color:var(--like)} .ig-btn[data-like][aria-pressed="true"] svg{fill:var(--like)}
+.ig-btn[data-repost][aria-pressed="true"]{color:var(--repost)}
+.ig-btn[data-save][aria-pressed="true"] svg{fill:var(--ink)}
+.ig-body{display:grid;gap:4px;padding:0 var(--gr) 0 var(--gl);justify-items:start}
+.ig-cap{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink-2)}
+.ig-cap b{color:var(--ink)}
+.ig-link{color:var(--ink-3);min-height:28px}
+.ig-time{font-size:var(--t4);color:var(--ink-3)}
+.caught{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:var(--accent-5);color:var(--accent);box-shadow:inset 0 0 0 2px rgb(255 210 63 / .4)}
+.caught svg{width:30px;height:30px;stroke-width:2.6}
+@media (max-width:440px){.topbar .logo{display:none}.seg{gap:16px}}
+
+/* pages */
+.page{padding-block:calc(16px + env(safe-area-inset-top,0px)) 32px}
+h1.title{font:700 var(--t1)/1.1 var(--f);margin:0 0 8px;letter-spacing:-.02em;text-wrap:balance}
+h2.sec{font:700 var(--t2)/1.2 var(--f);margin:32px 0 12px;letter-spacing:-.01em}
+.sub{color:var(--ink-3);margin:0 0 16px}
+input[type=text],input[type=search],textarea,select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--r1);padding:12px 16px;font-size:16px;color:var(--ink)}
+input::placeholder,textarea::placeholder{color:var(--ink-3)}
+textarea{resize:none;min-height:120px}
+.field{display:grid;gap:8px;margin-bottom:16px}
+.label{font-weight:700;font-size:var(--t4);color:var(--ink-2)}
+.hint{font-size:var(--t4);color:var(--ink-3);margin:0}
+.err{font-size:var(--t4);color:var(--danger);margin:0}
+.search{position:relative}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--ink-3)}
+.search input{padding-left:42px;border-radius:22px;height:44px}
+.pickgrid{display:flex;flex-wrap:wrap;gap:8px}
+.pickgrid button{height:40px;padding:0 16px;border-radius:20px;font-weight:700;background:var(--surface);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
+.pickgrid button[aria-pressed="true"]{background:hsl(var(--h) 60% 50% / .2);color:hsl(var(--h) 85% 82%);box-shadow:inset 0 0 0 1.5px hsl(var(--h) 70% 60% / .7)}
+.trend{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.trend .rank{color:var(--ink-3);font-weight:700;font-variant-numeric:tabular-nums}
+.trend b{display:block}
+.people{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * var(--gr)) 0 calc(-1 * var(--gl));padding:0 var(--gr) 4px var(--gl)}
+.people::-webkit-scrollbar{display:none}
+.person{flex:0 0 144px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r2);padding:16px 12px;display:grid;justify-items:center;gap:8px;text-align:center;min-width:0}
+.person .av{width:64px;height:64px}
+.person b{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person .muted{font-size:var(--t4)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}
+.cell{position:relative;aspect-ratio:3/4;overflow:hidden;background:radial-gradient(120% 90% at 20% 10%,hsl(var(--h) 55% 30%),hsl(var(--h) 40% 12%) 75%);
+  color:#fff;text-align:left;padding:8px;display:flex;align-items:flex-end;isolation:isolate}
+.cell img,.cell video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1}
+.cell span{font:700 var(--t4)/1.25 var(--f);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 3px rgb(0 0 0 / .6)}
+.cell .vid{position:absolute;top:8px;right:8px;width:18px;height:18px;color:#fff;filter:drop-shadow(0 1px 2px rgb(0 0 0 / .6))}
+.cell.tall{grid-row:span 2;aspect-ratio:auto}
+.empty{color:var(--ink-3);text-align:center;padding:40px 16px;display:grid;gap:12px;justify-items:center}
+.empty b{color:var(--ink);font-size:var(--t2)}
+.notice{background:var(--surface);border:1px solid var(--line);border-radius:var(--r1);padding:12px 16px;font-size:var(--t4);color:var(--ink-3)}
+
+/* profile */
+.prof{display:grid;gap:16px}
+.prof-top{display:flex;align-items:center;gap:20px}
+.big-av{width:88px;height:88px;border-radius:50%;flex:none;display:grid;place-items:center;font:700 var(--t1) var(--f);overflow:hidden;
+  background:hsl(var(--h,50) 45% 40%);color:#fff;position:relative;box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--line)}
+.big-av img{width:100%;height:100%;object-fit:cover}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));flex:1;text-align:center}
+.stats b{display:block;font:700 var(--t2)/1.2 var(--f);font-variant-numeric:tabular-nums}
+.stats span{font-size:var(--t4);color:var(--ink-3)}
+.bio b{font-size:var(--t2)}
+.bio p{margin:2px 0 0;overflow-wrap:anywhere;white-space:pre-wrap}
+.streak{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:14px;background:var(--accent-5);color:var(--accent);font-weight:700;font-size:var(--t4);box-shadow:inset 0 0 0 1px rgb(255 210 63 / .25)}
+.streak svg{width:14px;height:14px;fill:var(--accent);stroke:none}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ptabs{display:flex;border-bottom:1px solid var(--line);margin:24px calc(-1 * var(--gr)) 0 calc(-1 * var(--gl));position:sticky;top:0;background:var(--bg);z-index:2}
+.ptabs button{flex:1;height:48px;font-weight:700;color:var(--ink-3);position:relative}
+.ptabs button[aria-pressed="true"]{color:var(--ink)}
+.ptabs button[aria-pressed="true"]::after{content:"";position:absolute;left:30%;right:30%;bottom:0;height:3px;border-radius:2px;background:var(--ink)}
+.flush{margin:0 calc(-1 * var(--gr)) 0 calc(-1 * var(--gl))}
+.back{display:inline-flex;align-items:center;gap:4px;height:44px;font-weight:700;margin-left:-8px;padding-right:8px}
+.back svg{width:22px;height:22px}
+
+/* activity */
+.act{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;min-height:64px}
+.act .txt{min-width:0;overflow-wrap:anywhere}
+.act .txt .muted{font-size:var(--t4)}
+.act .kind{position:relative}
+.act .kind i{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 0 2px var(--bg)}
+.act .kind i svg{width:11px;height:11px;stroke-width:3;color:#fff}
+.act .thumb{width:44px;height:56px;border-radius:8px;overflow:hidden;background:hsl(var(--h) 45% 25%);display:grid;place-items:center;font:700 10px/1.1 var(--f);padding:4px;text-align:center;color:#fff}
+.act .thumb img,.act .thumb video{width:100%;height:100%;object-fit:cover}
+.act.new{background:var(--accent-5);margin:0 calc(-1 * var(--gr)) 0 calc(-1 * var(--gl));padding:12px var(--gr) 12px var(--gl)}
+.streak-card{display:flex;align-items:center;gap:16px;padding:16px;border-radius:var(--r3);background:linear-gradient(135deg,rgb(255 210 63 / .14),rgb(255 77 109 / .1));border:1px solid rgb(255 210 63 / .2);margin-bottom:8px}
+.streak-card .flame{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:rgb(255 210 63 / .16);flex:none}
+.streak-card .flame svg{width:28px;height:28px;fill:var(--accent);stroke:none;filter:drop-shadow(0 0 12px rgb(255 210 63 / .6))}
+.streak-card b{font-size:var(--t2);display:block}
+.days{display:flex;gap:6px;margin-top:8px}
+.days i{width:20px;height:6px;border-radius:3px;background:var(--line)}
+.days i.on{background:var(--accent)}
+
+/* create */
+.seg-pill{display:inline-flex;background:var(--surface);border-radius:22px;padding:4px;border:1px solid var(--line);margin-bottom:24px}
+.seg-pill button{height:36px;padding:0 20px;border-radius:18px;font-weight:700;color:var(--ink-3)}
+.seg-pill button[aria-pressed="true"]{background:var(--raised);color:var(--ink);box-shadow:var(--shadow)}
+.compose{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px}
+.compose textarea{background:none;border:0;padding:8px 0;font-size:var(--t2);line-height:1.4;min-height:140px}
+.compose textarea:focus-visible{outline:none}
+.compose-bar{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:12px;margin-top:8px}
+.compose-bar .grow{flex:1}
+.counter{width:28px;height:28px}
+.counter circle{stroke-width:3}
+.media-prev{position:relative;border-radius:var(--r2);overflow:hidden;border:1px solid var(--line);max-height:360px;display:grid;background:#000}
+.media-prev img,.media-prev video{width:100%;max-height:360px;object-fit:cover}
+.media-prev button{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:50%;background:rgb(0 0 0 / .6);display:grid;place-items:center;color:#fff}
+.media-prev button svg{width:18px;height:18px}
+.swatches{display:flex;gap:12px}
+.swatches button{width:40px;height:40px;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 1px rgb(255 255 255 / .15)}
+.swatches button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.story-prev{aspect-ratio:9/16;max-height:420px;margin:0 auto 16px;border-radius:var(--r3);overflow:hidden;position:relative;display:grid;place-items:center;
+  background:var(--c,#1E3A5F);padding:24px;text-align:center;font:700 var(--t2)/1.3 var(--f);color:#fff;overflow-wrap:anywhere;white-space:pre-wrap}
+.story-prev img,.story-prev video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* sheets */
+.sheet{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:flex-end;background:rgb(4 4 8 / .6);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.sheet-body{background:var(--surface);border-radius:var(--r3) var(--r3) 0 0;max-height:90%;display:flex;flex-direction:column;overscroll-behavior:contain;
+  padding:8px var(--gr) calc(16px + env(safe-area-inset-bottom,0px)) var(--gl);box-shadow:0 -12px 40px -12px rgb(0 0 0 / .6)}
+.sheet-body::before{content:"";width:36px;height:4px;border-radius:2px;background:rgb(255 255 255 / .2);margin:0 auto 4px}
+.sheet-body header{display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.sheet-body header h2{font:700 var(--t3) var(--f);margin:0}
+.sheet-body header button{width:44px;height:44px;display:grid;place-items:center;margin-right:-12px}
+.sheet-scroll{overflow-y:auto;min-height:0;display:grid;gap:16px;align-content:start;padding-bottom:8px;overscroll-behavior:contain}
+.sheet-scroll .tw{padding-left:0;padding-right:0;margin:0}
+.menu{display:grid;gap:4px}
+.menu button{display:flex;align-items:center;gap:12px;height:52px;padding:0 12px;border-radius:var(--r1);font-weight:700;text-align:left}
+.menu button:hover{background:var(--raised)}
+.menu button svg{width:22px;height:22px}
+.menu button.danger{color:var(--danger)}
+.form-row{display:flex;gap:8px;align-items:center}
+.form-row input{flex:1;min-width:0;border-radius:22px;height:44px}
+.opt{display:grid;gap:8px}
+.opt label{display:flex;gap:12px;align-items:center;min-height:44px}
+.opt input{accent-color:var(--accent);width:20px;height:20px}
+.w-row{display:grid;grid-template-columns:minmax(0,8.5rem) 1fr auto;gap:12px;align-items:center;font-size:var(--t4)}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:hsl(var(--h) 75% 62%);border-radius:4px}
+
+/* story viewer */
+.sv{position:absolute;inset:0;z-index:30;background:#000;display:grid;grid-template-rows:auto minmax(0,1fr);touch-action:manipulation}
+.sv-bars{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:var(--gl);right:var(--gr);display:flex;gap:4px;z-index:3}
+.sv-bars i{flex:1;height:3px;border-radius:2px;background:rgb(255 255 255 / .3);overflow:hidden}
+.sv-bars i.done::after,.sv-bars i.on::after{content:"";display:block;height:100%;background:#fff;border-radius:2px}
+.sv-bars i.on::after{width:0;animation:fill var(--d,5s) linear forwards}
+@keyframes fill{to{width:100%}}
+@media (prefers-reduced-motion:reduce){.sv-bars i.on::after{animation-duration:.01s;width:100%}}
+.sv-head{position:absolute;top:calc(20px + env(safe-area-inset-top,0px));left:var(--gl);right:var(--gr);display:flex;align-items:center;gap:8px;z-index:3;color:#fff;text-shadow:0 1px 4px rgb(0 0 0 / .5)}
+.sv-head .grow{flex:1;min-width:0;display:flex;gap:8px;align-items:baseline}
+.sv-head button{width:44px;height:44px;display:grid;place-items:center}
+.sv-stage{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font:700 var(--t1)/1.25 var(--f);color:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
+.sv-stage img,.sv-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.sv-tap{position:absolute;inset:0;display:grid;grid-template-columns:1fr 2fr;z-index:2}
+
+/* celebration */
+.cele{position:absolute;inset:0;z-index:40;display:grid;place-items:center;background:rgb(4 4 8 / .75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:24px}
+.cele-card{position:relative;background:var(--surface);border:1px solid rgb(255 210 63 / .25);border-radius:var(--r3);padding:32px 24px 24px;text-align:center;display:grid;gap:12px;justify-items:center;max-width:340px;
+  box-shadow:0 0 80px -10px rgb(255 210 63 / .35)}
+.cele-card .big{font:700 var(--t1)/1 var(--f);letter-spacing:-.02em}
+.cele-card .glow{width:80px;height:80px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,rgb(255 210 63 / .35),transparent 70%)}
+.cele-card .glow svg{width:44px;height:44px;fill:var(--accent);stroke:none}
+.cele-card p{margin:0;color:var(--ink-3)}
+.confetti{position:absolute;left:50%;top:40%;width:0;height:0;pointer-events:none}
+.confetti i{position:absolute;width:8px;height:12px;border-radius:2px;background:var(--c);opacity:0}
+@media (prefers-reduced-motion:no-preference){
+  .confetti i{animation:conf 1.1s cubic-bezier(.15,.7,.3,1) var(--dl) forwards}
+  @keyframes conf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--r))}}
+  .cele-card{animation:rise .5s cubic-bezier(.2,1.3,.4,1)}
+  @keyframes rise{from{transform:scale(.85) translateY(16px);opacity:0}}
+}
+.toast{position:absolute;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:50;
+  background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:22px;font-weight:700;font-size:var(--t4);max-width:calc(100% - 32px);text-align:center;box-shadow:var(--shadow)}
+.loading{height:100%;display:grid;place-content:center;justify-items:center;gap:12px;color:var(--ink-3);text-align:center;padding:0 24px}
+.onb-hero{display:grid;gap:8px;margin:24px 0}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="view" id="view"><div class="loading" role="status"><h1 class="logo">Pick<span>D</span></h1><span>Loading…</span></div></div>
+  <nav class="tabs" id="nav" aria-label="Sections"></nav>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <div class="install" id="install" hidden><div style="flex:1"><b>Install PickD</b>Tap <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Share"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> Share, then <b style="display:inline;font-size:13px">Add to Home Screen</b>.</div>
+   <button class="x" id="installX" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="stroke:currentColor"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+</div>
+<input type="file" id="fileIn" accept="image/*,video/*" hidden>
+
+<script>
+"use strict";
+/* ---------------- icons & catalogue ---------------- */
+const ICONS={
+ home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ bell:'<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+ heart:'<path d="M12 20s-7-4.4-9.2-9A5 5 0 0 1 12 6a5 5 0 0 1 9.2 5C19 15.6 12 20 12 20z"/>',
+ reply:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+ repost:'<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
+ save:'<path d="M6 3h12v18l-6-4-6 4z"/>',
+ dots:'<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
+ less:'<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>',
+ trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+ close:'<path d="M6 6l12 12M18 6 6 18"/>',
+ back:'<path d="M15 5l-7 7 7 7"/>',
+ image:'<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
+ quote:'<path d="M4 20h4l10-10-4-4L4 16z"/><path d="m13 7 4 4"/>',
+ mute:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/>',
+ sound:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>',
+ play:'<path d="M7 4v16l13-8z" fill="currentColor"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+ check:'<path d="m5 12 5 5 9-10"/>',
+ flame:'<path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-3-1-6 1-9z"/>',
+ sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'
+};
+const ic=(n,a="")=>`<svg viewBox="0 0 24 24" aria-hidden="true" ${a}>${ICONS[n]}</svg>`;
+const INTERESTS={Photography:{h:200},Football:{h:135},Robotics:{h:262},Cooking:{h:22},"Music production":{h:322},Fitness:{h:95},
+ Gaming:{h:285},"Travel in Morocco":{h:38},Fashion:{h:342},"Cars & F1":{h:4},Anime:{h:305},Space:{h:228},
+ Electronics:{h:172},Film:{h:52},Books:{h:120},Coding:{h:190},Travel:{h:210},Coffee:{h:28},Crafts:{h:15},Cycling:{h:150},Flowers:{h:330}};
+const NEAR={Photography:["Film","Travel in Morocco"],Robotics:["Electronics","Space","Coding"],Football:["Fitness","Gaming"],
+ Cooking:["Travel in Morocco","Fitness"],"Music production":["Film","Electronics"],Fitness:["Football","Cooking"],
+ Gaming:["Anime","Coding"],"Travel in Morocco":["Photography","Cooking"],Fashion:["Photography","Film"],"Cars & F1":["Electronics","Gaming"],
+ Anime:["Gaming","Film","Books"],Space:["Robotics","Photography"],Electronics:["Robotics","Coding"],Film:["Photography","Anime","Books"],
+ Books:["Film","Anime"],Coding:["Robotics","Electronics","Gaming"],Travel:["Photography","Travel in Morocco","Cycling"],
+ Coffee:["Cooking","Crafts"],Crafts:["Electronics","Coffee","Flowers"],Cycling:["Fitness","Travel"],Flowers:["Photography","Crafts"]};
+const STORY_COLORS=["#1E3A5F","#7A2E3A","#1F5B45","#8A5A12","#2A2A35","#0F4C5C"];
+const MILESTONES=[3,7,14,30,50,100,365];
+const hashN=s=>[...String(s)].reduce((a,c)=>a*31+c.charCodeAt(0)>>>0,7);
+const hueOf=t=>INTERESTS[t]?.h??hashN(t)%360;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nf=new Intl.NumberFormat(undefined,{notation:"compact",maximumFractionDigits:1});
+function ago(iso){const s=(Date.now()-Date.parse(iso||0))/1e3;if(!isFinite(s))return"";if(s<60)return"now";if(s<3600)return Math.floor(s/60)+"m";
+ if(s<86400)return Math.floor(s/3600)+"h";if(s<604800)return Math.floor(s/86400)+"d";return new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric"});}
+const now=()=>new Date().toISOString();
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const dayKey=d=>{const x=d||new Date();return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");};
+
+/* ---------------- state & storage ---------------- */
+const S={me:null,mode:"local",ready:false,posts:[],likes:[],reposts:[],follows:[],stories:[],comments:[],profiles:{},names:{},mine:null,
+ tab:"home",home:"foryou",view:null,ptab:"posts",q:"",sheet:null,draft:null,ctab:"post",sv:null,posting:false};
+const DEF_MINE={weights:{},hidden:[],saved:[],seenStories:[],recent:[],streak:0,best:0,lastDay:"",days:[],activitySeen:"",muted:true,breakAfter:0,posted:false,hideDemo:false};
+const Local={
+ read(c){try{return JSON.parse(localStorage.getItem("pickd:"+c)||"{}")}catch{return{}}},
+ write(c,o){try{localStorage.setItem("pickd:"+c,JSON.stringify(o))}catch{toast("This device is out of space for PickD.")}},
+ subs:{},rows(c){return Object.entries(this.read(c)).map(([id,d])=>({id,...d}))},
+ watch(c,cb){(this.subs[c]??=[]).push(cb);cb(this.rows(c))},
+ emit(c){(this.subs[c]||[]).forEach(f=>f(this.rows(c)))},
+ async set(c,id,d){const o=this.read(c);o[id]=d;this.write(c,o);this.emit(c)},
+ async del(c,id){const o=this.read(c);delete o[id];this.write(c,o);this.emit(c)}
+};
+let DB=null,USER=null,ASSETS=null;
+const Store={
+ watch(c,cb,q){if(!DB)return Local.watch(c,cb);let r=DB.collection(c);if(q)r=q(r);
+  r.onSnapshot(s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),e=>{console.warn(c,e);toast("Lost touch with PickD. Reopen it to reconnect.")})},
+ set(c,id,d){return DB?DB.collection(c).doc(id).set(d):Local.set(c,id,d)},
+ del(c,id){return DB?DB.collection(c).doc(id).delete():Local.del(c,id)}
+};
+let mineT;
+function saveMine(){clearTimeout(mineT);mineT=setTimeout(()=>{
+ if(DB)DB.doc(`data/users/${S.me.id}/state`).set(S.mine).catch(()=>toast("Your settings did not save. Try again."));
+ else Local.write("mine",S.mine)},400)}
+
+/* everything lives on this phone: text in localStorage, photos and videos in IndexedDB */
+const MEDIA={};let idb;
+function idbOpen(){return idb||(idb=new Promise((res,rej)=>{const r=indexedDB.open("pickd",1);r.onupgradeneeded=()=>r.result.createObjectStore("media");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))}
+async function idbTx(mode,fn){const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction("media",mode);fn(tx.objectStore("media"));tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error)})}
+const idbPut=(id,b)=>idbTx("readwrite",st=>st.put(b,id));
+const idbDel=id=>{if(!id)return;if(MEDIA[id]){URL.revokeObjectURL(MEDIA[id]);delete MEDIA[id]}idbTx("readwrite",st=>st.delete(id)).catch(()=>{})};
+async function loadMedia(){const db=await idbOpen();await new Promise((res,rej)=>{const cur=db.transaction("media").objectStore("media").openCursor();
+ cur.onsuccess=()=>{const c=cur.result;if(c){MEDIA[c.key]=URL.createObjectURL(c.value);c.continue()}else res()};cur.onerror=()=>rej(cur.error)})}
+async function seed(){const r=await fetch("seed/seed.json");if(!r.ok)return;const d=await r.json(),t=Date.now(),at=h=>new Date(t-h*36e5).toISOString();
+ for(const c of ["profiles","posts","stories","likes"]){const o=Local.read(c);for(const[id,x0] of Object.entries(d[c]||{})){const x={...x0};
+  for(const k of ["createdAtH","updatedAtH","atH"])if(k in x){x[k.slice(0,-1)]=at(x[k]);delete x[k]}o[id]=x}Local.write(c,o)}
+ try{localStorage.setItem("pickd:seeded","1")}catch{}}
+async function boot(){
+ try{await loadMedia()}catch(e){console.warn(e)}
+ let seeded=false;try{seeded=!!localStorage.getItem("pickd:seeded")}catch{}
+ if(!seeded)try{await seed()}catch(e){console.warn(e)}
+ startLocal();
+ try{navigator.storage?.persist?.()}catch{}
+}
+function startLocal(){if(S.ready)return;S.ready=true;DB=null;S.mode="local";S.me=S.me||{id:"me",name:"",avatar:""};S.mine={...DEF_MINE,...Local.read("mine")};attach()}
+function attach(){
+ tickStreak();
+ Store.watch("profiles",r=>{S.profiles=Object.fromEntries(r.map(x=>[x.id,x]));resolveNames();render()});
+ Store.watch("posts",r=>{S.posts=r.sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));render()},q=>q.orderBy("createdAt","desc").limit(600));
+ Store.watch("likes",r=>{S.likes=r;render()});
+ Store.watch("reposts",r=>{S.reposts=r;render()});
+ Store.watch("follows",r=>{S.follows=r;render()});
+ Store.watch("stories",r=>{S.stories=r;render()},q=>q.orderBy("createdAt","desc").limit(200));
+ Store.watch("comments",r=>{S.comments=r;render()});
+}
+let namesT;
+function resolveNames(){if(!USER)return;clearTimeout(namesT);namesT=setTimeout(async()=>{
+ const ids=[...new Set([...Object.keys(S.profiles),...S.posts.map(p=>p.author)])].filter(Boolean);
+ try{const ps=await USER.profiles(ids);Object.assign(S.names,ps);render()}catch{}},200)}
+function tickStreak(){
+ const t=dayKey(),y=dayKey(new Date(Date.now()-864e5)),m=S.mine;if(m.lastDay===t)return;
+ m.streak=m.lastDay===y?m.streak+1:1;m.best=Math.max(m.best||0,m.streak);m.lastDay=t;m.days=[...(m.days||[]),t].slice(-14);saveMine();
+ if(MILESTONES.includes(m.streak))setTimeout(()=>celebrate("flame",`${m.streak} days`,`You've opened PickD ${m.streak} days in a row. Keep your streak going tomorrow.`),900);
+}
+
+/* ---------------- derived ---------------- */
+const prof=id=>S.profiles[id]||{};
+const me=()=>S.profiles[S.me.id];
+const picks=()=>me()?.picks||[];
+const handleOf=id=>prof(id).handle||(S.names[id]?.name||"someone").toLowerCase().replace(/[^a-z0-9]+/g,".").replace(/^\.|\.$/g,"")||"someone";
+const nameOf=id=>prof(id).display||S.names[id]?.name||(id===S.me.id&&S.me.name)||handleOf(id);
+const avatarOf=id=>{const p=prof(id);return p.avatarLocal?MEDIA[p.avatarLocal]||"":p.avatarPath||p.avatarData||""};
+const mediaOf=p=>p.mediaLocal?MEDIA[p.mediaLocal]||"":p.mediaPath||p.mediaData||p.imageData||"";
+const isVideo=p=>p.mediaType==="video";
+const textOf=p=>[p.title,p.text].filter(Boolean).join("\n");
+const roots=()=>S.posts.filter(p=>!p.replyTo&&!(S.mine.hideDemo&&p.demo));
+const byId=id=>S.posts.find(p=>p.id===id);
+const likesOf=id=>S.likes.filter(l=>l.post===id).length;
+const iLike=id=>S.likes.some(l=>l.post===id&&l.user===S.me.id);
+const repostsOf=id=>S.reposts.filter(r=>r.post===id).length+S.posts.filter(p=>p.quoteOf===id).length;
+const iRepost=id=>S.reposts.some(r=>r.post===id&&r.user===S.me.id);
+const repliesOf=id=>S.posts.filter(p=>p.replyTo===id).sort((a,b)=>(a.createdAt||"").localeCompare(b.createdAt||""));
+const replyCount=id=>repliesOf(id).length+S.comments.filter(c=>c.post===id).length;
+const following=()=>S.follows.filter(f=>f.from===S.me.id).map(f=>f.to);
+const isFollowing=id=>S.follows.some(f=>f.from===S.me.id&&f.to===id);
+const followersOf=id=>S.follows.filter(f=>f.to===id).length;
+const weight=t=>S.mine.weights[t]??1;
+const saved=id=>S.mine.saved.includes(id);
+const pickedBy=t=>Object.values(S.profiles).filter(p=>(p.picks||[]).includes(t)).length;
+const allInterests=()=>{const x=new Set();[...S.posts.map(p=>p.tag),...picks()].forEach(t=>{if(t&&!INTERESTS[t])x.add(t)});return[...Object.keys(INTERESTS),...[...x].sort()]};
+const engagement=p=>likesOf(p.id)+2*replyCount(p.id)+3*repostsOf(p.id);
+
+function forYou(){
+ const mp=picks(),hid=new Set(S.mine.hidden),t=Date.now();
+ return roots().filter(p=>!hid.has(p.id)&&(mp.includes(p.tag)||p.author===S.me.id||isFollowing(p.author))).map(p=>{
+  const h=Math.max(0,(t-Date.parse(p.createdAt||0))/36e5);
+  return{p,s:weight(p.tag)*Math.log(engagement(p)+2)/Math.pow(h+2,.5)*(mediaOf(p)?1.25:1)*(isFollowing(p.author)?1.15:1)}
+ }).sort((a,b)=>b.s-a.s).map(x=>x.p);
+}
+function timeline(){
+ const fol=new Set([...following(),S.me.id]),items=new Map();
+ roots().forEach(p=>{if(fol.has(p.author))items.set(p.id,{p,at:p.createdAt})});
+ S.reposts.forEach(r=>{if(!fol.has(r.user))return;const p=byId(r.post);if(!p||p.replyTo)return;const cur=items.get(p.id);
+  if(!cur||(r.at||"")>(cur.at||""))items.set(p.id,{p,at:r.at,by:r.user})});
+ return[...items.values()].sort((a,b)=>(b.at||"").localeCompare(a.at||""));
+}
+function activity(){
+ const mine=new Set(S.posts.filter(p=>p.author===S.me.id).map(p=>p.id)),ev=[];
+ S.likes.forEach(l=>{if(mine.has(l.post)&&l.user!==S.me.id)ev.push({t:"like",u:l.user,post:l.post,at:l.at||""})});
+ S.reposts.forEach(r=>{if(mine.has(r.post)&&r.user!==S.me.id)ev.push({t:"repost",u:r.user,post:r.post,at:r.at||""})});
+ S.posts.forEach(p=>{if(p.author===S.me.id)return;if(mine.has(p.replyTo))ev.push({t:"reply",u:p.author,post:p.replyTo,text:p.text,at:p.createdAt});
+  if(mine.has(p.quoteOf))ev.push({t:"quote",u:p.author,post:p.id,text:p.text,at:p.createdAt})});
+ S.comments.forEach(c=>{if(mine.has(c.post)&&c.author!==S.me.id)ev.push({t:"reply",u:c.author,post:c.post,text:c.text,at:c.createdAt})});
+ S.follows.forEach(f=>{if(f.to===S.me.id)ev.push({t:"follow",u:f.from,at:f.at||""})});
+ return ev.sort((a,b)=>(b.at||"").localeCompare(a.at||"")).slice(0,100);
+}
+const unread=()=>activity().filter(e=>(e.at||"")>(S.mine.activitySeen||"")).length;
+function storyGroups(){
+ const live=S.stories.filter(s=>Date.now()-Date.parse(s.createdAt||0)<864e5&&!(S.mine.hideDemo&&s.demo)).sort((a,b)=>(a.createdAt||"").localeCompare(b.createdAt||""));
+ const by={};live.forEach(s=>(by[s.author]??=[]).push(s));const fol=following(),seen=new Set(S.mine.seenStories);
+ return Object.entries(by).map(([id,items])=>({id,items,seen:items.every(s=>seen.has(s.id))}))
+  .sort((a,b)=>(b.id===S.me.id)-(a.id===S.me.id)||a.seen-b.seen||fol.includes(b.id)-fol.includes(a.id));
+}
+
+/* ---------------- pieces ---------------- */
+function avatar(id,cls="av"){const src=avatarOf(id),h=hueOf(handleOf(id));
+ return`<span class="${cls}" style="--h:${h}">${src?`<img src="${esc(src)}" alt="" loading="lazy">`:esc((handleOf(id)[0]||"?").toUpperCase())}</span>`}
+function media(p,cls){const src=mediaOf(p);if(!src)return"";
+ return isVideo(p)?`<video class="${cls}" data-vid="${esc(p.id)}" src="${esc(src)}" muted loop playsinline preload="metadata" aria-label="${esc(textOf(p).slice(0,80)||"Video")}"></video>`
+  :`<img class="${cls}" src="${esc(src)}" alt="${esc(p.alt||textOf(p).slice(0,120)||"Photo")}" loading="lazy">`}
+function quoteCard(id){const q=byId(id);if(!q)return`<div class="quote muted">This post was deleted.</div>`;
+ return`<button class="quote" data-thread="${esc(q.id)}"><span class="tw-head">${avatar(q.author,"av xs")}<b>${esc(nameOf(q.author))}</b><span class="muted">@${esc(handleOf(q.author))} · ${ago(q.createdAt)}</span></span>
+  ${textOf(q)?`<span class="tw-text">${esc(textOf(q))}</span>`:""}${mediaOf(q)&&!isVideo(q)?`<span class="tw-media" style="max-height:160px"><img src="${esc(mediaOf(q))}" alt="" loading="lazy" style="max-height:160px"></span>`:""}</button>`}
+function acts(p){const l=iLike(p.id),r=iRepost(p.id),s=saved(p.id);
+ return`<div class="acts">
+  <button class="icon-btn" data-reply="${esc(p.id)}" aria-label="Reply, ${replyCount(p.id)} replies">${ic("reply")}${replyCount(p.id)||""}</button>
+  <button class="icon-btn" data-repost="${esc(p.id)}" aria-pressed="${r}" aria-label="Repost, ${repostsOf(p.id)} reposts">${ic("repost")}${repostsOf(p.id)||""}</button>
+  <button class="icon-btn" data-like="${esc(p.id)}" aria-pressed="${l}" aria-label="${l?"Unlike":"Like"}, ${likesOf(p.id)} likes">${ic("heart")}${likesOf(p.id)||""}</button>
+  <button class="icon-btn" data-save="${esc(p.id)}" aria-pressed="${s}" aria-label="${s?"Remove from saved":"Save"}">${ic("save")}</button></div>`}
+function card(p,opts={}){
+ const parent=p.replyTo&&byId(p.replyTo);
+ return`<article class="tw ${opts.open===false?"":"open"}" ${opts.open===false?"":`data-thread="${esc(p.replyTo||p.id)}"`}>
+  ${opts.by?`<div class="ctx">${ic("repost")}${opts.by===S.me.id?"You":esc(nameOf(opts.by))} reposted</div>`:""}
+  <button data-user="${esc(p.author)}" aria-label="Open ${esc(nameOf(p.author))}'s profile" style="align-self:start">${avatar(p.author,"av sm")}</button>
+  <div class="tw-body">
+   <div class="tw-head"><b>${esc(nameOf(p.author))}</b><span class="muted">@${esc(handleOf(p.author))} · ${ago(p.createdAt)}${p.demo?" · Test post":""}</span></div>
+   ${parent&&opts.showParent?`<span class="muted" style="font-size:var(--t4)">Replying to @${esc(handleOf(parent.author))}</span>`:""}
+   ${textOf(p)?`<p class="tw-text">${esc(textOf(p))}</p>`:""}
+   ${mediaOf(p)?`<div class="tw-media">${media(p,"")}</div>`:""}
+   ${p.quoteOf?quoteCard(p.quoteOf):""}
+   ${p.tag&&!p.replyTo?`<span class="tag-chip" style="--h:${hueOf(p.tag)}">${esc(p.tag)}</span>`:""}
+   ${acts(p)}
+  </div>
+  <button class="more" data-more="${esc(p.id)}" aria-label="More options">${ic("dots")}</button>
+ </article>`}
+function slide(p){
+ const l=iLike(p.id),r=iRepost(p.id),s=saved(p.id),own=p.author===S.me.id,fol=isFollowing(p.author),src=mediaOf(p);
+ const why=own?"Your post":fol?`You follow @${handleOf(p.author)}`:`Because you picked ${p.tag}`;
+ return`<section class="slide" style="--h:${hueOf(p.tag)}" data-slide="${esc(p.id)}" aria-label="Post by @${esc(handleOf(p.author))}">
+  ${src?media(p,"media"):`<div class="poster">${esc(textOf(p))}</div>`}
+  ${src&&isVideo(p)?`<button class="mute" data-mute aria-label="${S.mine.muted?"Turn sound on":"Mute"}">${ic(S.mine.muted?"mute":"sound")}</button>`:""}
+  <div class="rail">
+   <div class="av-wrap"><button data-user="${esc(p.author)}" aria-label="Open @${esc(handleOf(p.author))}'s profile">${avatar(p.author)}</button>
+    ${own||fol?"":`<button class="follow-dot" data-follow="${esc(p.author)}" aria-label="Follow @${esc(handleOf(p.author))}">${ic("plus")}</button>`}</div>
+   <button data-like="${esc(p.id)}" aria-pressed="${l}" aria-label="${l?"Unlike":"Like"}">${ic("heart")}${nf.format(likesOf(p.id))}</button>
+   <button data-reply="${esc(p.id)}" aria-label="Replies">${ic("reply")}${nf.format(replyCount(p.id))}</button>
+   <button data-repost="${esc(p.id)}" aria-pressed="${r}" aria-label="Repost">${ic("repost")}${nf.format(repostsOf(p.id))}</button>
+   <button data-save="${esc(p.id)}" aria-pressed="${s}" aria-label="${s?"Remove from saved":"Save"}">${ic("save")}${s?"Saved":"Save"}</button>
+   <button data-more="${esc(p.id)}" aria-label="More options">${ic("dots")}</button>
+  </div>
+  <div class="caption">
+   <button class="who" data-user="${esc(p.author)}">@${esc(handleOf(p.author))} <span class="muted">· ${ago(p.createdAt)}</span></button>
+   ${src&&textOf(p)?`<p>${esc(textOf(p))}</p>`:""}
+   ${p.quoteOf?`<button class="chip" data-thread="${esc(p.quoteOf)}">${ic("quote",'width="14" height="14"')}Quoting @${esc(handleOf(byId(p.quoteOf)?.author))}</button>`:""}
+   <div class="chips"><span class="chip accent">${esc(p.tag)}</span>${p.demo?`<span class="chip">Test post</span>`:""}<span class="why">${esc(why)}</span></div>
+   ${p.credit?`<span class="why" style="font-size:11px">${esc(p.credit)}</span>`:""}
+  </div></section>`}
+function cell(p,tall){const src=mediaOf(p);
+ return`<button class="cell ${tall?"tall":""}" style="--h:${hueOf(p.tag)}" data-thread="${esc(p.id)}" aria-label="Open post: ${esc(textOf(p).slice(0,60)||p.tag)}">
+  ${src?(isVideo(p)?`<video src="${esc(src)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video><span class="vid">${ic("play")}</span>`:`<img src="${esc(src)}" alt="" loading="lazy">`):`<span>${esc(textOf(p))}</span>`}</button>`}
+function followBtn(id,sm=true){if(id===S.me.id)return"";const f=isFollowing(id);
+ return`<button class="btn ${f?"ghost":""} ${sm?"sm":""}" data-follow="${esc(id)}">${f?"Following":"Follow"}</button>`}
+
+/* ---------------- views ---------------- */
+const V={
+ onboard(){const dp=S.dp||[];
+  return`<div class="page pad"><h1 class="logo">Pick<span>D</span></h1>
+   <div class="onb-hero"><h1 class="title">Your feed, built from what you love</h1><p class="sub" style="margin:0">Pick at least 3 interests. Swipe through videos, photos and posts from them, and follow people you like.</p></div>
+   <div class="pickgrid">${allInterests().map(t=>`<button style="--h:${hueOf(t)}" data-onpick="${esc(t)}" aria-pressed="${dp.includes(t)}">${esc(t)}</button>`).join("")}</div>
+   <div class="field" style="margin-top:24px"><label class="label" for="onCustom">Something else?</label>
+    <div class="form-row"><input type="text" id="onCustom" maxlength="30" placeholder="e.g. Calligraphy…" autocomplete="off"><button class="btn ghost" data-oncustom>Add</button></div></div>
+   <div class="field"><label class="label" for="onHandle">Username</label><input type="text" id="onHandle" maxlength="24" autocomplete="username" spellcheck="false" value="${esc(S.dh??handleOf(S.me.id))}"></div>
+   <button class="btn block" data-onstart ${dp.length<3?"disabled":""}>${dp.length<3?`Pick ${3-dp.length} more`:`Start with ${dp.length} interests`}</button>
+   <p class="hint" style="margin-top:16px">Everything you post stays on this phone.</p></div>`},
+ home(){
+  const sw=`<div class="seg">${[["following","Following"],["pics","Pics & vids"],["foryou","For you"]].map(([k,l])=>`<button data-home="${k}" aria-pressed="${S.home===k}">${l}</button>`).join("")}</div>`;
+  if(S.home==="pics"){const list=forYou().filter(p=>mediaOf(p)),inList=new Set(list.map(p=>p.id));
+   const sugg=roots().filter(p=>mediaOf(p)&&!inList.has(p.id)&&!S.mine.hidden.includes(p.id)).sort((a,b)=>engagement(b)-engagement(a)).slice(0,30);
+   const sTags=[...new Set(sugg.map(p=>p.tag))].slice(0,6);
+   const sHead=sugg.length?`<div class="pad" style="padding-block:24px 8px;border-bottom:1px solid var(--line)"><h2 class="sec" style="margin:0 0 4px">Suggested for you</h2><p class="muted" style="margin:0 0 12px">Photos and videos from interests you haven't picked yet.</p><div class="chips">${sTags.map(t=>`<button class="btn ghost sm" data-toggle="${esc(t)}">+ ${esc(t)}</button>`).join("")}</div></div>`+sugg.map(igCard).join(""):"";
+   return`<div class="topbar solid"><span class="logo">Pick<span>D</span></span>${sw}</div>${storiesBar()}
+    ${list.length||sugg.length?list.map(igCard).join("")+sHead+`<div class="empty"><span class="caught">${ic("check")}</span><b>You're all caught up</b><span>You've seen every photo and video from your interests.</span><div class="row"><button class="btn" data-go="create">Share a photo</button><button class="btn ghost" data-go="explore">Explore</button></div></div>`
+     :`<div class="empty pad"><b>No photos or videos yet</b><span>Photos and videos from your interests show up here.</span><button class="btn" data-go="create">Share the first one</button></div>`}`}
+  if(S.home==="following"){
+   const tl=timeline();
+   const sugg=Object.keys(S.profiles).filter(id=>id!==S.me.id&&!isFollowing(id)).sort((a,b)=>followersOf(b)-followersOf(a)).slice(0,8);
+   return`<div class="topbar solid"><span class="logo">Pick<span>D</span></span>${sw}</div>${storiesBar()}
+    <button class="composer" data-go="create">${avatar(S.me.id,"av sm")}<span class="fake">What's new in ${esc(picks()[0]||"your world")}?</span><span class="btn sm">Post</span></button>
+    ${tl.length?tl.map(x=>card(x.p,{by:x.by})).join("")+`<div class="empty"><span>You're all caught up on people you follow.</span><button class="btn ghost sm" data-home="foryou">Keep exploring For you</button></div>`
+     :`<div class="empty pad"><b>Follow people to fill this up</b><span>Posts and reposts from people you follow show up here, newest first.</span>
+      ${sugg.length?`<div class="people" style="margin-top:8px">${sugg.map(personCard).join("")}</div>`:`<button class="btn" data-home="foryou">Find people in For you</button>`}</div>`}`;
+  }
+  const list=forYou(),b=S.mine.breakAfter;let html="";
+  list.forEach((p,i)=>{html+=slide(p);if(b&&(i+1)%b===0&&i<list.length-1)html+=`<section class="slide breakslide pad"><h2>Time for a breather?</h2><p>You've seen ${i+1} posts. Stretch, drink some water, then carry on.</p><div class="row"><button class="btn ghost" data-go="profile">Close the feed</button></div></section>`});
+  return`<div class="feed" id="feed"><div class="topbar"><span class="logo">Pick<span>D</span></span>${sw}</div>${html}
+   <section class="slide endslide pad">${list.length?`<h2>You've seen it all</h2><p>That's every post from your ${picks().length} interests. Add an interest or post something new.</p>`
+    :`<h2>Be the first</h2><p>No posts in your interests yet. Your post starts the conversation.</p>`}
+    <div class="row"><button class="btn" data-go="create">Post something</button><button class="btn ghost" data-go="explore">Explore interests</button></div></section></div>`;
+ },
+ explore(){
+  const q=S.q.trim().toLowerCase();
+  if(q){const ppl=Object.keys(S.profiles).filter(id=>handleOf(id).includes(q)||nameOf(id).toLowerCase().includes(q)).slice(0,10);
+   const ints=allInterests().filter(t=>t.toLowerCase().includes(q));
+   const ps=roots().filter(p=>textOf(p).toLowerCase().includes(q)||(p.tag||"").toLowerCase().includes(q)).slice(0,30);
+   return searchBar()+`<div class="pad">
+    ${ppl.length?`<h2 class="sec">People</h2>${ppl.map(personRow).join("")}`:""}
+    ${ints.length?`<h2 class="sec">Interests</h2>${ints.map((t,i)=>trendRow(t,null)).join("")}`:`<div class="empty"><b>No interest called “${esc(S.q.trim())}”</b><button class="btn" data-addq>Add it to my interests</button></div>`}
+    ${ps.length?`<h2 class="sec">Posts</h2></div><div>${ps.map(p=>card(p)).join("")}</div>`:"</div>"}`;}
+  const wk=Date.now()-7*864e5,cnt={};roots().forEach(p=>{if(Date.parse(p.createdAt||0)>wk)cnt[p.tag]=(cnt[p.tag]||0)+1});
+  const trend=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,5);
+  const near=[...new Set(picks().slice().sort((a,b)=>weight(b)-weight(a)).flatMap(t=>NEAR[t]||[]))].filter(t=>!picks().includes(t)).slice(0,5);
+  const ppl=Object.keys(S.profiles).filter(id=>id!==S.me.id&&!isFollowing(id)).sort((a,b)=>followersOf(b)-followersOf(a)||sharedPicks(b)-sharedPicks(a)).slice(0,10);
+  const pop=roots().filter(p=>!S.mine.hidden.includes(p.id)).sort((a,b)=>engagement(b)-engagement(a)).slice(0,24);
+  return searchBar()+`<div class="pad">
+   ${S.mine.recent.length?`<h2 class="sec" style="display:flex;justify-content:space-between;align-items:center">Recent<button class="btn ghost sm" data-clearrecent>Clear</button></h2><div class="chips">${S.mine.recent.map(r=>`<button class="btn ghost sm" data-recent="${esc(r)}">${esc(r)}</button>`).join("")}</div>`:""}
+   ${trend.length?`<h2 class="sec">Trending this week</h2>${trend.map((t,i)=>trendRow(t,i+1,cnt[t])).join("")}`:""}
+   ${near.length?`<h2 class="sec">Interests close to yours</h2>${near.map(t=>trendRow(t,null)).join("")}`:""}
+   ${ppl.length?`<h2 class="sec">People to follow</h2><div class="people">${ppl.map(personCard).join("")}</div>`:""}
+   <h2 class="sec">Popular</h2></div>
+   ${pop.length?`<div class="grid3">${pop.map((p,i)=>cell(p,i%7===0&&mediaOf(p))).join("")}</div>`:`<div class="empty"><b>Nothing popular yet</b><span>Posts with the most likes, replies and reposts land here.</span></div>`}`;
+ },
+ create(){const d=S.draft||{},isStory=S.ctab==="story";
+  const tags=[...new Set([...picks(),...allInterests()])],tag=d.tag||picks()[0]||tags[0];
+  const seg=`<div class="seg-pill" role="group" aria-label="What to make"><button data-ctab="post" aria-pressed="${!isStory}">Post</button><button data-ctab="story" aria-pressed="${isStory}">Story</button></div>`;
+  if(isStory){const c=d.color||STORY_COLORS[0];
+   return`<div class="page pad"><h1 class="title">New story</h1><p class="sub">Stories disappear after 24 hours.</p>${seg}
+    <div class="story-prev" id="stPrev" style="--c:${c}">${d.media?(d.isVideo?`<video src="${esc(d.media)}" autoplay muted loop playsinline></video>`:`<img src="${esc(d.media)}" alt="Your photo">`):esc(d.stext||"Type something or add a photo")}</div>
+    ${d.media?`<div class="row" style="margin-bottom:16px"><button class="btn ghost" data-nomedia>Remove photo</button></div>`:`
+     <div class="field"><label class="label" for="stText">Text</label><textarea id="stText" maxlength="160" style="min-height:80px" placeholder="What's happening?">${esc(d.stext||"")}</textarea></div>
+     <div class="field"><span class="label">Background</span><div class="swatches">${STORY_COLORS.map(x=>`<button style="--c:${x}" data-color="${x}" aria-pressed="${x===c}" aria-label="Background ${x}"></button>`).join("")}</div></div>`}
+    <div class="row" style="justify-content:stretch;display:grid;grid-template-columns:1fr 1fr">
+     <button class="btn ghost" data-pick="story">${ic("image",'width="18" height="18"')}${d.media?"Change":"Photo or video"}</button>
+     <button class="btn" data-sharestory ${S.posting?"disabled":""}>${S.posting?"Sharing…":"Share story"}</button></div></div>`}
+  const len=(d.text||"").length,left=280-len,R=11,C=2*Math.PI*R;
+  return`<div class="page pad"><h1 class="title">${d.replyTo?"Reply":d.quoteOf?"Quote":"New post"}</h1><p class="sub">${d.replyTo?`Replying to @${esc(handleOf(byId(d.replyTo)?.author))}`:"Your post reaches everyone who picked its interest."}</p>
+   ${d.replyTo||d.quoteOf?"":seg}
+   <form id="postForm" novalidate>
+   <div class="compose">${avatar(S.me.id,"av sm")}<div>
+    <label class="label" for="pText" hidden>Post text</label>
+    <textarea id="pText" maxlength="280" placeholder="${d.media?"Add a caption…":"What's happening?"}" aria-describedby="pErr">${esc(d.text||"")}</textarea>
+    <p class="err" id="pErr" ${S.perr?"":"hidden"}>Write something or add a photo or video.</p>
+    ${d.media?`<div class="media-prev">${d.isVideo?`<video src="${esc(d.media)}" muted autoplay loop playsinline></video>`:`<img src="${esc(d.media)}" alt="Your photo">`}<button type="button" data-nomedia aria-label="Remove media">${ic("close")}</button></div>`:""}
+    ${d.quoteOf?`<div style="margin-top:12px">${quoteCard(d.quoteOf)}</div>`:""}
+   </div></div>
+   ${d.replyTo?"":`<div class="field" style="margin-top:16px"><span class="label">Interest</span><div class="pickgrid">${tags.slice(0,picks().length+4).map(t=>`<button type="button" style="--h:${hueOf(t)}" data-ptag="${esc(t)}" aria-pressed="${t===tag}">${esc(t)}</button>`).join("")}</div></div>`}
+   <div class="compose-bar">
+    ${d.replyTo?"":`<button type="button" class="icon-btn" data-pick="post" aria-label="Add photo or video" style="color:var(--accent)">${ic("image",'width="22" height="22"')}</button>`}
+    <span class="grow"></span>
+    <svg class="counter" viewBox="0 0 28 28" aria-label="${left} characters left"><circle cx="14" cy="14" r="${R}" stroke="var(--line)"/><circle id="ctr" cx="14" cy="14" r="${R}" stroke="${left<20?(left<0?"var(--danger)":"var(--accent)"):"var(--ink-3)"}" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-Math.min(1,len/280))}" transform="rotate(-90 14 14)"/></svg>
+    ${d.replyTo||d.quoteOf?`<button type="button" class="btn ghost sm" data-canceldraft>Cancel</button>`:""}
+    <button class="btn" id="postBtn" ${S.posting?"disabled":""}>${S.posting?"Posting…":d.replyTo?"Reply":"Post"}</button>
+   </div></form>
+   ${S.mode==="shared"&&!ASSETS?`<p class="hint" style="margin-top:16px">Photo and video uploads aren't available for your account on this page.</p>`:""}</div>`;
+ },
+ activity(){const ev=activity(),seen=S.mine.activitySeen||"",m=S.mine;
+  const last7=[...Array(7)].map((_,i)=>dayKey(new Date(Date.now()-(6-i)*864e5)));
+  const rows=ev.map(e=>{const p=e.post&&byId(e.post),isNew=(e.at||"")>seen;
+   const col={like:"var(--like)",repost:"var(--repost)",reply:"#4C8DFF",quote:"#4C8DFF",follow:"var(--accent)"}[e.t];
+   const icn={like:"heart",repost:"repost",reply:"reply",quote:"quote",follow:"user"}[e.t];
+   const txt={like:"liked your post",repost:"reposted your post",reply:"replied: "+(e.text||""),quote:"quoted you: "+(e.text||""),follow:"started following you"}[e.t];
+   return`<div class="act ${isNew?"new":""}"><button class="kind" data-user="${esc(e.u)}" aria-label="Open @${esc(handleOf(e.u))}'s profile">${avatar(e.u,"av sm")}<i style="background:${col}">${ic(icn)}</i></button>
+    <div class="txt"><b>${esc(handleOf(e.u))}</b> ${esc(txt)} <span class="muted">${ago(e.at)}</span></div>
+    ${e.t==="follow"?followBtn(e.u):p?`<button class="thumb" style="--h:${hueOf(p.tag)}" data-thread="${esc(p.replyTo||p.id)}" aria-label="Open post">${mediaOf(p)?(isVideo(p)?`<video src="${esc(mediaOf(p))}#t=0.5" muted preload="metadata" aria-hidden="true"></video>`:`<img src="${esc(mediaOf(p))}" alt="">`):esc(textOf(p).slice(0,30))}</button>`:"<span></span>"}</div>`}).join("");
+  return`<div class="page pad"><h1 class="title">Activity</h1>
+   <div class="streak-card"><span class="flame">${ic("flame")}</span><div><b>${m.streak} day streak</b><span class="muted" style="font-size:var(--t4)">Best: ${m.best} day${m.best===1?"":"s"}. Open PickD tomorrow to keep it.</span>
+    <div class="days" aria-label="Last 7 days">${last7.map(k=>`<i class="${(m.days||[]).includes(k)?"on":""}"></i>`).join("")}</div></div></div>
+   ${rows||`<div class="empty"><b>No activity yet</b><span>Likes, replies, reposts and new followers show up here. Post something to get the first ones.</span><button class="btn" data-go="create">Post something</button></div>`}</div>`},
+ profile(){
+  const id=S.view||S.me.id,own=id===S.me.id,p=prof(id);
+  const posts=roots().filter(x=>x.author===id),replies=S.posts.filter(x=>x.author===id&&x.replyTo);
+  const reposts=S.reposts.filter(r=>r.user===id).sort((a,b)=>(b.at||"").localeCompare(a.at||"")).map(r=>byId(r.post)).filter(Boolean);
+  const likesRecv=posts.reduce((n,x)=>n+likesOf(x.id),0);
+  const tabs=own?[["posts","Posts"],["replies","Replies"],["reposts","Reposts"],["saved","Saved"]]:[["posts","Posts"],["replies","Replies"],["reposts","Reposts"]];
+  const pt=tabs.some(t=>t[0]===S.ptab)?S.ptab:"posts";
+  let body="";
+  if(pt==="posts")body=posts.length?`<div class="grid3 flush">${posts.map(x=>cell(x)).join("")}</div>`:emptyP(own?"Share your first post":"No posts yet",own?"Photos, videos and thoughts you post appear here.":"");
+  else if(pt==="replies")body=replies.length?`<div class="flush">${replies.map(x=>card(x,{showParent:true})).join("")}</div>`:emptyP("No replies yet","");
+  else if(pt==="reposts")body=reposts.length?`<div class="flush">${reposts.map(x=>card(x)).join("")}</div>`:emptyP("No reposts yet","");
+  else{const sv=S.mine.saved.map(byId).filter(Boolean);body=sv.length?`<div class="grid3 flush">${sv.map(x=>cell(x)).join("")}</div>`:emptyP("Nothing saved","Tap the bookmark on any post. Only you can see this tab.")}
+  return`<div class="page pad"><div class="prof">
+   ${own?"":`<button class="back" data-back>${ic("back")}Back</button>`}
+   <div class="prof-top">${own?`<button class="big-av" data-sheet="edit" aria-label="Change profile photo" style="--h:${hueOf(handleOf(id))}">${avatarOf(id)?`<img src="${esc(avatarOf(id))}" alt="">`:esc((handleOf(id)[0]||"?").toUpperCase())}</button>`
+     :`<span class="big-av" style="--h:${hueOf(handleOf(id))}">${avatarOf(id)?`<img src="${esc(avatarOf(id))}" alt="">`:esc((handleOf(id)[0]||"?").toUpperCase())}</span>`}
+    <div class="stats"><div><b>${posts.length}</b><span>Posts</span></div><div><b>${nf.format(followersOf(id))}</b><span>Followers</span></div><div><b>${S.follows.filter(f=>f.from===id).length}</b><span>Following</span></div><div><b>${nf.format(likesRecv)}</b><span>Likes</span></div></div></div>
+   <div class="bio"><b>${esc(nameOf(id))}</b> <span class="muted" translate="no">@${esc(handleOf(id))}</span>${p.bio?`<p>${esc(p.bio)}</p>`:""}</div>
+   ${own&&S.mine.streak?`<span class="streak">${ic("flame")}${S.mine.streak} day streak</span>`:""}
+   <div class="chips">${(p.picks||[]).map(t=>`<span class="tag-chip" style="--h:${hueOf(t)}">${esc(t)}</span>`).join("")}</div>
+   ${own?`<div class="actions"><button class="btn ghost" data-sheet="edit">Edit profile</button><button class="btn ghost" data-sheet="picks">${ic("sliders",'width="18" height="18"')}Interests</button></div>`
+    :`<div class="actions">${followBtn(id,false)}<button class="btn ghost" data-back>Back</button></div>`}
+  </div>
+  <div class="ptabs">${tabs.map(([k,l])=>`<button data-ptab="${k}" aria-pressed="${pt===k}">${l}</button>`).join("")}</div>
+  ${body}
+  </div>`;
+ }
+};
+function storiesBar(){const groups=storyGroups(),mineG=groups.find(g=>g.id===S.me.id);
+ return`<div class="stories" aria-label="Stories">
+  <button class="st" data-${mineG?"story":"newstory"}="${esc(S.me.id)}"><span class="ring ${mineG?(mineG.seen?"seen":""):"add"}">${avatar(S.me.id)}${mineG?"":`<span class="plus">${ic("plus")}</span>`}</span><span>Your story</span></button>
+  ${groups.filter(g=>g.id!==S.me.id).map(g=>`<button class="st" data-story="${esc(g.id)}"><span class="ring ${g.seen?"seen":""}">${avatar(g.id)}</span><span>${esc(handleOf(g.id))}</span></button>`).join("")}</div>`}
+function igCard(p){const l=iLike(p.id),r=iRepost(p.id),sv=saved(p.id),own=p.author===S.me.id,n=likesOf(p.id),c=replyCount(p.id),txt=textOf(p);
+ return`<article class="ig">
+  <div class="ig-head"><button data-user="${esc(p.author)}" aria-label="Open @${esc(handleOf(p.author))}'s profile">${avatar(p.author,"av ig-av")}</button>
+   <div class="ig-who"><button data-user="${esc(p.author)}"><b>${esc(handleOf(p.author))}</b></button>${own||isFollowing(p.author)?"":` · <button class="ig-follow" data-follow="${esc(p.author)}">Follow</button>`}
+    <span class="muted">${esc(p.tag)}${p.demo?" · Test post":""}</span></div>
+   <button class="ig-more" data-more="${esc(p.id)}" aria-label="More options">${ic("dots")}</button></div>
+  <div class="ig-media" data-dbl="${esc(p.id)}">${media(p,"")}${isVideo(p)?`<button class="mute ig-mute" data-mute aria-label="${S.mine.muted?"Turn sound on":"Mute"}">${ic(S.mine.muted?"mute":"sound")}</button>`:""}</div>
+  <div class="ig-acts">
+   <button class="ig-btn" data-like="${esc(p.id)}" aria-pressed="${l}" aria-label="${l?"Unlike":"Like"}">${ic("heart")}</button>
+   <button class="ig-btn" data-reply="${esc(p.id)}" aria-label="Comment">${ic("reply")}</button>
+   <button class="ig-btn" data-repost="${esc(p.id)}" aria-pressed="${r}" aria-label="Repost">${ic("repost")}</button>
+   <span style="flex:1"></span>
+   <button class="ig-btn" data-save="${esc(p.id)}" aria-pressed="${sv}" aria-label="${sv?"Remove from saved":"Save"}">${ic("save")}</button></div>
+  <div class="ig-body">
+   ${n?`<b class="num">${n===1?"1 like":nf.format(n)+" likes"}</b>`:`<span class="muted">Be the first to like this</span>`}
+   ${txt?`<p class="ig-cap"><b>${esc(handleOf(p.author))}</b> ${esc(txt)}</p>`:""}
+   ${c?`<button class="ig-link" data-thread="${esc(p.id)}">View ${c===1?"1 comment":`all ${c} comments`}</button>`:""}
+   <span class="ig-time">${ago(p.createdAt)}${p.credit?` · ${esc(p.credit)}`:""}</span>
+  </div></article>`}
+const sharedPicks=id=>(prof(id).picks||[]).filter(t=>picks().includes(t)).length;
+const searchBar=()=>`<div class="topbar solid" style="justify-content:stretch"><div class="search" style="flex:1"><label for="q" hidden>Search</label>${ic("search")}<input type="search" id="q" value="${esc(S.q)}" placeholder="Search people, interests, posts" autocomplete="off" enterkeyhint="search"></div></div>`;
+const emptyP=(t,s)=>`<div class="empty"><b>${esc(t)}</b>${s?`<span>${esc(s)}</span>`:""}</div>`;
+function trendRow(t,rank,n){const on=picks().includes(t),c=n??roots().filter(p=>p.tag===t).length;
+ return`<div class="trend"${rank?"":' style="grid-template-columns:minmax(0,1fr) auto"'}>${rank?`<span class="rank">${rank}</span>`:""}<div><b>${esc(t)}</b><span class="muted" style="font-size:var(--t4)">${c} post${c===1?"":"s"}${rank?" this week":""} · ${pickedBy(t)} picked</span></div>
+  <button class="btn ${on?"ghost":""} sm" data-toggle="${esc(t)}" aria-pressed="${on}">${on?"Picked":"Pick"}</button></div>`}
+function personCard(id){const sp=sharedPicks(id);
+ return`<div class="person"><button data-user="${esc(id)}" aria-label="Open @${esc(handleOf(id))}'s profile">${avatar(id)}</button><b>${esc(nameOf(id))}</b>
+  <span class="muted">${sp?`${sp} shared interest${sp>1?"s":""}`:`${followersOf(id)} follower${followersOf(id)===1?"":"s"}`}</span>${followBtn(id)}</div>`}
+function personRow(id){return`<div class="act"><button data-user="${esc(id)}" aria-label="Open profile">${avatar(id,"av sm")}</button><div class="txt"><b>${esc(nameOf(id))}</b><br><span class="muted">@${esc(handleOf(id))}</span></div>${followBtn(id)}</div>`}
+
+const SHEETS={
+ thread(id){const p=byId(id);if(!p)return null;const reps=repliesOf(id),legacy=S.comments.filter(c=>c.post===id);
+  return{title:"Post",body:card(p,{open:false})+`<div style="display:grid">${reps.map(r=>card(r,{open:false})).join("")}
+   ${legacy.map(c=>`<div class="act"><button data-user="${esc(c.author)}" aria-label="Open profile">${avatar(c.author,"av sm")}</button><div class="txt"><b>${esc(handleOf(c.author))}</b> <span class="muted">${ago(c.createdAt)}</span><br>${esc(c.text)}</div><span></span></div>`).join("")}
+   ${reps.length+legacy.length?"":`<p class="muted" style="text-align:center;margin:8px 0">No replies yet. Start the conversation.</p>`}</div>`,
+  foot:`<form class="form-row" id="replyForm" data-id="${esc(id)}">${avatar(S.me.id,"av xs")}<label for="rIn" hidden>Reply</label><input type="text" id="rIn" maxlength="280" placeholder="Reply to @${esc(handleOf(p.author))}…" autocomplete="off" enterkeyhint="send"><button class="btn sm">Reply</button></form>`}},
+ repost(id){const r=iRepost(id);return{title:"Repost",body:`<div class="menu"><button data-dorepost="${esc(id)}">${ic("repost")}${r?"Undo repost":"Repost"}</button><button data-quote="${esc(id)}">${ic("quote")}Quote</button></div>`}},
+ more(id){const p=byId(id);if(!p)return null;const own=p.author===S.me.id;
+  return{title:"Options",body:`<div class="menu">${own?`<button class="danger" data-delete="${esc(id)}">${ic("trash")}Delete post</button>`
+   :`<button data-less="${esc(id)}">${ic("less")}Show less ${esc(p.tag)}</button><button data-follow="${esc(p.author)}">${ic("user")}${isFollowing(p.author)?"Unfollow":"Follow"} @${esc(handleOf(p.author))}</button>`}
+   <button data-thread="${esc(p.replyTo||id)}">${ic("reply")}Open replies</button></div>`}},
+ confirmDelete(id){return{title:"Delete post?",body:`<p style="margin:0">It disappears from every feed, with its likes and reposts. You can't undo this.</p>
+   <div class="actions"><button class="btn ghost" data-close>Keep it</button><button class="btn" style="background:var(--danger)" data-confirmdel="${esc(id)}">Delete</button></div>`}},
+ edit(){const p=me()||{};return{title:"Edit profile",body:`<form id="editForm">
+   <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px"><span class="big-av" style="--h:${hueOf(handleOf(S.me.id))}">${avatarOf(S.me.id)?`<img src="${esc(avatarOf(S.me.id))}" alt="">`:esc((handleOf(S.me.id)[0]||"?").toUpperCase())}</span>
+    <button type="button" class="btn ghost sm" data-pick="avatar">Change photo</button></div>
+   <div class="field"><label class="label" for="eName">Name</label><input type="text" id="eName" value="${esc(p.display||nameOf(S.me.id))}" maxlength="40" autocomplete="name"></div>
+   <div class="field"><label class="label" for="eHandle">Username</label><input type="text" id="eHandle" value="${esc(handleOf(S.me.id))}" maxlength="24" autocomplete="username" spellcheck="false"></div>
+   <div class="field"><label class="label" for="eBio">Bio</label><textarea id="eBio" maxlength="160" style="min-height:80px">${esc(p.bio||"")}</textarea></div>
+   <button class="btn block">Save profile</button></form>`}},
+ picks(){const mx=Math.max(...picks().map(weight),1);return{title:"Your interests",body:`<p class="muted" style="margin:0">For you shows posts from these. Tap to add or remove.</p>
+   <div class="pickgrid">${allInterests().map(t=>`<button style="--h:${hueOf(t)}" data-toggle="${esc(t)}" aria-pressed="${picks().includes(t)}">${esc(t)}</button>`).join("")}</div>
+   <div class="form-row"><label for="cIn" hidden>Add an interest</label><input type="text" id="cIn" maxlength="30" placeholder="Add your own…" autocomplete="off"><button class="btn sm" data-custom>Add</button></div>
+   <div><h2 class="sec" style="margin-top:8px">What your feed learned</h2><div class="opt">${picks().map(t=>`<div class="w-row" style="--h:${hueOf(t)}"><span>${esc(t)}</span><div class="bar"><i style="width:${Math.round(weight(t)/mx*100)}%"></i></div><span class="num muted">${weight(t).toFixed(1)}</span></div>`).join("")}</div>
+    ${Object.keys(S.mine.weights).length?`<button class="btn ghost sm" data-resetw style="margin-top:12px">Reset what it learned</button>`:""}</div>
+   <div class="opt"><label><input type="checkbox" id="showDemo" ${S.mine.hideDemo?"":"checked"}>Show test posts</label></div>
+   <div class="field"><label class="label" for="brk">Take-a-break reminder</label><select id="brk">${[[0,"Off"],[15,"Every 15 posts"],[30,"Every 30 posts"],[60,"Every 60 posts"]].map(([v,l])=>`<option value="${v}" ${S.mine.breakAfter==v?"selected":""}>${l}</option>`).join("")}</select></div>`}}
+};
+
+/* ---------------- render ---------------- */
+const NAV=[["home","Home","home"],["explore","Explore","search"],["create","New post","plus"],["activity","Activity","bell"],["profile","Profile","user"]];
+let io;
+function render(){
+ if(!S.ready||!S.mine)return;
+ const onb=!me()?.picks?.length,view=document.getElementById("view");
+ const vids={};document.querySelectorAll("video[data-vid]").forEach(v=>vids[v.dataset.vid]=v.currentTime);
+ const feed=document.getElementById("feed"),fy=feed?.scrollTop,vy=view.scrollTop;
+ const ae=document.activeElement,aid=ae?.id,sel=aid&&ae.selectionStart!=null?[ae.selectionStart,ae.selectionEnd]:null;
+ const sheetScroll=document.querySelector(".sheet-scroll")?.scrollTop;
+ view.innerHTML=onb?V.onboard():V[S.tab]();
+ const nav=document.getElementById("nav");nav.hidden=onb;const u=unread();
+ nav.innerHTML=NAV.map(([t,l,i])=>{const cur=S.tab===t&&!(t==="profile"&&S.view&&S.view!==S.me.id);
+  if(t==="create")return`<button class="create" data-go="create" aria-label="${l}" ${cur?'aria-current="page"':""}>${ic(i)}</button>`;
+  if(t==="profile")return`<button data-go="profile" aria-label="${l}" ${cur?'aria-current="page"':""}>${avatar(S.me.id,"nav-av")}</button>`;
+  return`<button data-go="${t}" aria-label="${l}${t==="activity"&&u?`, ${u} new`:""}" ${cur?'aria-current="page"':""}>${ic(i)}${t==="activity"&&u&&S.tab!=="activity"?`<span class="badge">${u>99?"99+":u}</span>`:""}</button>`}).join("");
+ document.querySelector(".sheet")?.remove();
+ if(S.sheet){const s=SHEETS[S.sheet.k](S.sheet.id);if(!s)S.sheet=null;else document.getElementById("app").insertAdjacentHTML("beforeend",
+  `<div class="sheet" data-backdrop><div class="sheet-body" role="dialog" aria-modal="true" aria-label="${esc(s.title)}"><header><h2>${esc(s.title)}</h2><button data-close aria-label="Close">${ic("close",'width="22" height="22"')}</button></header>
+   <div class="sheet-scroll">${s.body}</div>${s.foot||""}</div></div>`);
+  const ss=document.querySelector(".sheet-scroll");if(ss&&sheetScroll!=null)ss.scrollTop=sheetScroll}
+ const f2=document.getElementById("feed");if(f2&&fy!=null)f2.scrollTop=fy;else if(vy)view.scrollTop=vy;
+ if(aid){const el=document.getElementById(aid);if(el){el.focus({preventScroll:true});if(sel&&el.setSelectionRange)try{el.setSelectionRange(...sel)}catch{}}}
+ document.querySelectorAll("video[data-vid]").forEach(v=>{v.muted=S.mine.muted;if(vids[v.dataset.vid])v.currentTime=vids[v.dataset.vid]});
+ watchVideos();
+}
+function watchVideos(){io?.disconnect();if(!("IntersectionObserver"in window))return;
+ io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target;if(e.isIntersecting&&e.intersectionRatio>.6&&!S.sv)v.play().catch(()=>{});else v.pause()}),{threshold:[0,.6,1]});
+ document.querySelectorAll("video[data-vid]").forEach(v=>io.observe(v))}
+function go(t){if(S.tab==="create")syncDraft();S.tab=t;S.sheet=null;if(t==="profile")S.view=null;
+ if(t==="activity"){render();S.mine.activitySeen=now();saveMine();setTimeout(render,1500)}else render();
+ if(t!=="home")document.getElementById("view").scrollTop=0}
+let tt;function toast(m){const t=document.getElementById("toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2400)}
+const run=(p,msg)=>Promise.resolve(p).catch(e=>{console.warn(e);if(msg)toast(msg)});
+
+/* ---------------- celebration ---------------- */
+function celebrate(icon,big,line){document.getElementById("cele")?.remove();
+ const cols=["#FFD23F","#FF4D6D","#2FD28A","#4C8DFF","#FF8A3D"];
+ const bits=[...Array(36)].map((_,i)=>{const a=Math.random()*Math.PI*2,d=120+Math.random()*180;
+  return`<i style="--c:${cols[i%5]};--x:${Math.cos(a)*d}px;--y:${Math.sin(a)*d-80}px;--r:${Math.random()*720-360}deg;--dl:${Math.random()*.15}s"></i>`}).join("");
+ document.getElementById("app").insertAdjacentHTML("beforeend",`<div class="cele" id="cele" role="dialog" aria-modal="true" aria-label="${esc(big)}"><div class="confetti" aria-hidden="true">${bits}</div>
+  <div class="cele-card"><span class="glow">${ic(icon)}</span><span class="big">${esc(big)}</span><p>${esc(line)}</p><button class="btn block" data-closecele>Nice</button></div></div>`);
+ document.querySelector("[data-closecele]").focus()}
+
+/* ---------------- actions ---------------- */
+async function saveProfile(patch){const cur=me()||{};
+ const next={handle:cur.handle||handleOf(S.me.id),display:cur.display||"",bio:cur.bio||"",picks:cur.picks||[],avatarId:cur.avatarId||"",avatarData:cur.avatarData||"",...patch,updatedAt:now()};
+ S.profiles[S.me.id]={id:S.me.id,...next};render();await run(Store.set("profiles",S.me.id,next),"Your profile did not save. Try again.")}
+function setPick(t,on){const c=picks();saveProfile({picks:on?[...new Set([...c,t])]:c.filter(x=>x!==t)})}
+const cleanTag=v=>v.trim().replace(/\s+/g," ").slice(0,30).replace(/^./,c=>c.toUpperCase());
+const cleanHandle=v=>v.trim().replace(/^@/,"").toLowerCase().replace(/[^a-z0-9._]/g,"").slice(0,24);
+const taken=h=>Object.values(S.profiles).some(p=>p.id!==S.me.id&&(p.handle||"").toLowerCase()===h);
+function learn(tag,d){if(!tag)return;S.mine.weights[tag]=Math.max(.2,Math.min(5,+(weight(tag)+d).toFixed(2)));saveMine()}
+async function like(id,force){const on=force??!iLike(id);if(on===iLike(id))return;const p=byId(id),lid=id+"_"+S.me.id;
+ if(on)S.likes.push({id:lid,post:id,user:S.me.id,at:now()});else S.likes=S.likes.filter(l=>l.id!==lid);
+ if(p&&p.author!==S.me.id)learn(p.tag,on?.3:-.3);render();
+ await run(on?Store.set("likes",lid,{post:id,user:S.me.id,at:now()}):Store.del("likes",lid),"That like did not save.")}
+async function repost(id){const on=!iRepost(id),rid=id+"_"+S.me.id,p=byId(id);
+ if(on)S.reposts.push({id:rid,post:id,user:S.me.id,at:now()});else S.reposts=S.reposts.filter(r=>r.id!==rid);
+ if(on&&p)learn(p.tag,.4);S.sheet=null;render();toast(on?"Reposted to your followers":"Repost removed");
+ await run(on?Store.set("reposts",rid,{post:id,user:S.me.id,at:now()}):Store.del("reposts",rid),"That repost did not save.")}
+async function follow(id){const fid=S.me.id+"_"+id,on=!isFollowing(id);
+ if(on)S.follows.push({id:fid,from:S.me.id,to:id,at:now()});else S.follows=S.follows.filter(f=>f.id!==fid);
+ S.sheet=null;render();toast(on?`Following @${handleOf(id)}`:`Unfollowed @${handleOf(id)}`);
+ await run(on?Store.set("follows",fid,{from:S.me.id,to:id,at:now()}):Store.del("follows",fid),"That follow did not save.")}
+async function delPost(id){const p=byId(id);if(!p||p.author!==S.me.id)return;
+ S.posts=S.posts.filter(x=>x.id!==id);S.sheet=null;render();toast("Post deleted");
+ await run(Store.del("posts",id),"The post could not be deleted.");
+ S.likes.filter(l=>l.post===id).forEach(l=>run(Store.del("likes",l.id)));S.reposts.filter(r=>r.post===id).forEach(r=>run(Store.del("reposts",r.id)));
+ if(p.mediaLocal)idbDel(p.mediaLocal)}
+function save(id){const on=!saved(id);S.mine.saved=on?[id,...S.mine.saved]:S.mine.saved.filter(x=>x!==id);saveMine();render();toast(on?"Saved. Only you can see it.":"Removed from saved")}
+
+/* media */
+let pickFor=null;const fileIn=document.getElementById("fileIn");
+function shrink(file,max){return new Promise((res,rej)=>{const img=new Image(),url=URL.createObjectURL(file);
+ img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+  c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(b=>b?res({blob:b,data:c.toDataURL("image/jpeg",.82)}):rej(0),"image/jpeg",.82)};
+ img.onerror=()=>{URL.revokeObjectURL(url);rej(0)};img.src=url})}
+fileIn.addEventListener("change",async()=>{const f=fileIn.files[0];fileIn.value="";if(!f)return;const vid=f.type.startsWith("video/");
+ if(!vid&&!f.type.startsWith("image/"))return toast("Choose a photo or a video.");
+ if(pickFor==="avatar"){if(vid)return toast("Choose a photo for your profile.");
+  try{const r=await shrink(f,400),id="av_"+newId(),old=me()?.avatarLocal;await idbPut(id,r.blob);MEDIA[id]=URL.createObjectURL(r.blob);
+   await saveProfile({avatarLocal:id,avatarData:""});if(old)idbDel(old);toast("Profile photo updated")}
+  catch(e){toast(e?.code==="too_large"?"That photo is too large.":"That photo could not be uploaded. Try another.")}return}
+ if(vid){if(f.size>60*1024*1024)return toast("Choose a video under 60 MB.");
+  S.draft={...(S.draft||{}),media:URL.createObjectURL(f),blob:f,isVideo:true};render();return}
+ try{const r=await shrink(f,1440);S.draft={...(S.draft||{}),media:r.data,blob:r.blob,isVideo:false};render()}catch{toast("That photo could not be read. Try another.")}});
+async function uploadDraft(d){if(!d.blob)return{};const id="m_"+newId();
+ try{await idbPut(id,d.blob)}catch(e){console.warn(e);throw{code:"storage_full"}}
+ MEDIA[id]=URL.createObjectURL(d.blob);return{mediaLocal:id,mediaType:d.isVideo?"video":"image"}}
+function syncDraft(){const t=document.getElementById("pText"),st=document.getElementById("stText");
+ if(t)S.draft={...(S.draft||{}),text:t.value};if(st)S.draft={...(S.draft||{}),stext:st.value}}
+
+/* story viewer */
+let svT;
+function openStories(startId){const groups=storyGroups();const ids=groups.map(g=>g.id);let ai=ids.indexOf(startId);if(ai<0)return;
+ const g=groups[ai],seen=new Set(S.mine.seenStories);let si=g.items.findIndex(s=>!seen.has(s.id));if(si<0)si=0;
+ S.sv={ids,ai,si};document.querySelectorAll("video[data-vid]").forEach(v=>v.pause());drawStory()}
+function drawStory(){clearTimeout(svT);document.getElementById("sv")?.remove();const sv=S.sv;if(!sv)return;
+ const groups=storyGroups(),g=groups.find(x=>x.id===sv.ids[sv.ai]);if(!g){closeStories();return}const s=g.items[sv.si];if(!s){closeStories();return}
+ if(!S.mine.seenStories.includes(s.id)){S.mine.seenStories=[...S.mine.seenStories,s.id].slice(-400);saveMine()}
+ const vid=s.mediaType==="video",src=mediaOf(s),own=g.id===S.me.id;
+ document.getElementById("app").insertAdjacentHTML("beforeend",`<div class="sv" id="sv" role="dialog" aria-modal="true" aria-label="Story by @${esc(handleOf(g.id))}">
+  <div class="sv-bars">${g.items.map((_,i)=>`<i class="${i<sv.si?"done":i===sv.si?"on":""}" style="--d:${vid?"15s":"5s"}"></i>`).join("")}</div>
+  <div class="sv-stage" style="background:${esc(s.color||"#000")}">${src?(vid?`<video src="${esc(src)}" autoplay playsinline ${S.mine.muted?"muted":""} id="svVid"></video>`:`<img src="${esc(src)}" alt="Story photo">`):esc(s.text||"")}</div>
+  <div class="sv-tap"><button data-svprev aria-label="Previous"></button><button data-svnext aria-label="Next"></button></div>
+  <div class="sv-head">${avatar(g.id,"av xs")}<span class="grow"><b>${esc(handleOf(g.id))}</b><span style="opacity:.75">${ago(s.createdAt)}</span></span>
+   ${own?`<button data-delstory="${esc(s.id)}" aria-label="Delete this story">${ic("trash",'width="20" height="20"')}</button>`:""}<button data-svclose aria-label="Close stories">${ic("close",'width="24" height="24"')}</button></div></div>`);
+ const v=document.getElementById("svVid");
+ if(v){v.addEventListener("loadedmetadata",()=>{const d=Math.min(15,v.duration||15);document.querySelector(".sv-bars .on")?.style.setProperty("--d",d+"s");clearTimeout(svT);svT=setTimeout(nextStory,d*1000)});v.play().catch(()=>{})}
+ svT=setTimeout(nextStory,vid?15000:5000);document.querySelector("[data-svclose]").focus({preventScroll:true})}
+function nextStory(){const sv=S.sv;if(!sv)return;const g=storyGroups().find(x=>x.id===sv.ids[sv.ai]);
+ if(g&&sv.si<g.items.length-1)sv.si++;else{sv.ai++;sv.si=0;if(sv.ai>=sv.ids.length)return closeStories();
+  const ng=storyGroups().find(x=>x.id===sv.ids[sv.ai]);const seen=new Set(S.mine.seenStories);const k=ng?ng.items.findIndex(s=>!seen.has(s.id)):0;sv.si=k<0?0:k}drawStory()}
+function prevStory(){const sv=S.sv;if(!sv)return;if(sv.si>0)sv.si--;else if(sv.ai>0){sv.ai--;sv.si=0}drawStory()}
+function closeStories(){clearTimeout(svT);S.sv=null;document.getElementById("sv")?.remove();render()}
+
+/* ---------------- events ---------------- */
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button,[data-backdrop],[data-thread]");if(!b)return;const d=b.dataset;
+ if("backdrop"in d){if(e.target===b){S.sheet=null;render()}return}
+ if("closecele"in d){document.getElementById("cele")?.remove();return}
+ if("svclose"in d)return closeStories();if("svnext"in d)return nextStory();if("svprev"in d)return prevStory();
+ if(d.delstory){const id=d.delstory;idbDel(S.stories.find(x=>x.id===id)?.mediaLocal);closeStories();run(Store.del("stories",id),"The story could not be deleted.");toast("Story deleted");return}
+ if("close"in d){S.sheet=null;render();return}
+ if(d.go)return go(d.go);
+ if(d.home){S.home=d.home;render();document.getElementById("view").scrollTop=0;document.getElementById("feed")?.scrollTo(0,0);return}
+ if(d.like)return like(d.like);
+ if(d.reply){S.sheet={k:"thread",id:d.reply};render();document.getElementById("rIn")?.focus();return}
+ if(d.repost){S.sheet={k:"repost",id:d.repost};render();return}
+ if(d.dorepost)return repost(d.dorepost);
+ if(d.quote){S.draft={quoteOf:d.quote,tag:byId(d.quote)?.tag};S.ctab="post";S.sheet=null;S.tab="create";render();document.getElementById("pText")?.focus();return}
+ if(d.save)return save(d.save);
+ if(d.more){S.sheet={k:"more",id:d.more};render();return}
+ if(d.less){const p=byId(d.less);S.mine.hidden=[...S.mine.hidden,p.id].slice(-500);learn(p.tag,-.4);S.sheet=null;render();toast(`You'll see less ${p.tag}`);return}
+ if(d.follow)return follow(d.follow);
+ if(d.user){S.view=d.user;S.tab="profile";S.ptab="posts";S.sheet=null;render();document.getElementById("view").scrollTop=0;return}
+ if("back"in d){S.view=null;S.tab="home";render();return}
+ if(d.thread){S.sheet={k:"thread",id:d.thread};render();return}
+ if(d.delete){S.sheet={k:"confirmDelete",id:d.delete};render();return}
+ if(d.confirmdel)return delPost(d.confirmdel);
+ if(d.ptab){S.ptab=d.ptab;render();return}
+ if(d.sheet){S.sheet={k:d.sheet};render();return}
+ if(d.toggle){const on=!picks().includes(d.toggle);setPick(d.toggle,on);toast(on?`${d.toggle} added to For you`:`${d.toggle} removed`);return}
+ if(d.custom!==undefined){const t=cleanTag(document.getElementById("cIn").value);if(!t)return toast("Type an interest first");
+  const ex=allInterests().find(x=>x.toLowerCase()===t.toLowerCase())||t;setPick(ex,true);toast(`${ex} added`);return}
+ if("resetw"in d){S.mine.weights={};saveMine();render();toast("Your feed starts learning again");return}
+ if("addq"in d){const t=cleanTag(S.q);if(t){setPick(t,true);S.q="";toast(`${t} added to For you`)}return}
+ if(d.recent!==undefined){S.q=d.recent;render();return}
+ if("clearrecent"in d){S.mine.recent=[];saveMine();render();return}
+ if("mute"in d){S.mine.muted=!S.mine.muted;saveMine();document.querySelectorAll("video[data-vid]").forEach(v=>v.muted=S.mine.muted);render();return}
+ if(d.ctab){syncDraft();S.ctab=d.ctab;render();return}
+ if(d.ptag){syncDraft();S.draft={...(S.draft||{}),tag:d.ptag};render();return}
+ if(d.color){syncDraft();S.draft={...(S.draft||{}),color:d.color};render();return}
+ if(d.pick){syncDraft();if(S.mode==="shared"&&!ASSETS)return toast("Photo and video uploads aren't available for your account here.");
+  pickFor=d.pick;fileIn.accept=d.pick==="avatar"?"image/*":"image/*,video/*";fileIn.click();return}
+ if("nomedia"in d){syncDraft();S.draft={...S.draft,media:null,blob:null,isVideo:false};render();return}
+ if("canceldraft"in d){S.draft=null;S.perr=false;go("home");return}
+ if(d.story)return openStories(d.story);
+ if(d.newstory!==undefined){S.ctab="story";go("create");return}
+ if("sharestory"in d)return shareStory();
+ if(d.onpick){S.dh=document.getElementById("onHandle").value;const c=S.dp||[];S.dp=c.includes(d.onpick)?c.filter(x=>x!==d.onpick):[...c,d.onpick];render();return}
+ if("oncustom"in d){const t=cleanTag(document.getElementById("onCustom").value);if(!t)return toast("Type an interest first");
+  S.dh=document.getElementById("onHandle").value;const ex=allInterests().find(x=>x.toLowerCase()===t.toLowerCase())||t;if(!INTERESTS[ex])INTERESTS[ex]={h:hueOf(ex)};S.dp=[...new Set([...(S.dp||[]),ex])];render();return}
+ if("onstart"in d){const h=cleanHandle(document.getElementById("onHandle").value)||handleOf(S.me.id);if(taken(h))return toast(`@${h} is taken. Try another.`);
+  saveProfile({handle:h,picks:S.dp});S.tab="home";S.home="foryou";toast("Welcome to PickD");return}
+});
+let lastTap=0;
+const heart=s=>{const id=s.dataset.slide||s.dataset.dbl,sel=s.dataset.slide?`[data-slide="${CSS.escape(id)}"]`:`[data-dbl="${CSS.escape(id)}"]`;like(id,true);
+ const n=document.querySelector(sel);n?.insertAdjacentHTML("beforeend",`<div class="burst">${ic("heart")}</div>`);setTimeout(()=>n?.querySelector(".burst")?.remove(),760)};
+document.addEventListener("dblclick",e=>{const s=e.target.closest("[data-slide],[data-dbl]");if(s&&!e.target.closest("button"))heart(s)});
+document.addEventListener("pointerup",e=>{if(e.pointerType!=="touch")return;const s=e.target.closest("[data-slide],[data-dbl]");if(!s||e.target.closest("button"))return;const t=Date.now();if(t-lastTap<300)heart(s);lastTap=t});
+document.addEventListener("keydown",e=>{
+ if(e.key==="Escape"){if(S.sv)return closeStories();if(document.getElementById("cele"))return document.getElementById("cele").remove();if(S.sheet){S.sheet=null;render()}}
+ if(S.sv&&e.key==="ArrowRight")nextStory();if(S.sv&&e.key==="ArrowLeft")prevStory();
+ if(e.target.id==="q"&&e.key==="Enter"){const v=S.q.trim();if(v){S.mine.recent=[v,...S.mine.recent.filter(x=>x!==v)].slice(0,8);saveMine()}}});
+document.addEventListener("input",e=>{const t=e.target;
+ if(t.id==="q"){S.q=t.value;render()}
+ if(t.id==="pText"){S.draft={...(S.draft||{}),text:t.value};if(S.perr&&t.value.trim()){S.perr=false;document.getElementById("pErr").hidden=true}
+  const len=t.value.length,left=280-len,c=document.getElementById("ctr"),C=2*Math.PI*11;c.setAttribute("stroke-dashoffset",C*(1-Math.min(1,len/280)));c.setAttribute("stroke",left<20?(left<0?"var(--danger)":"var(--accent)"):"var(--ink-3)");c.closest("svg").setAttribute("aria-label",left+" characters left")}
+ if(t.id==="stText"){S.draft={...(S.draft||{}),stext:t.value};document.getElementById("stPrev").textContent=t.value||"Type something or add a photo"}});
+document.addEventListener("change",e=>{if(e.target.id==="showDemo"){S.mine.hideDemo=!e.target.checked;saveMine();render();toast(S.mine.hideDemo?"Test posts hidden":"Test posts shown")}
+ if(e.target.id==="brk"){S.mine.breakAfter=+e.target.value;saveMine();toast(S.mine.breakAfter?`Reminder every ${S.mine.breakAfter} posts`:"Break reminder off")}});
+document.addEventListener("submit",async e=>{e.preventDefault();const f=e.target;
+ if(f.id==="replyForm"){const inp=document.getElementById("rIn"),v=inp.value.trim();if(!v)return;const par=byId(f.dataset.id),id=newId();
+  const post={author:S.me.id,replyTo:f.dataset.id,tag:par?.tag||"",text:v,createdAt:now()};S.posts.unshift({id,...post});inp.value="";render();document.getElementById("rIn")?.focus();
+  if(par&&par.author!==S.me.id)learn(par.tag,.3);await run(Store.set("posts",id,post),"Your reply did not send. Try again.");return}
+ if(f.id==="editForm"){const h=cleanHandle(document.getElementById("eHandle").value);if(!h)return toast("Use letters or numbers in your username.");if(taken(h))return toast(`@${h} is taken. Try another.`);
+  S.sheet=null;await saveProfile({handle:h,display:document.getElementById("eName").value.trim().slice(0,40),bio:document.getElementById("eBio").value.trim().slice(0,160)});toast("Profile saved");return}
+ if(f.id==="postForm"){syncDraft();const d=S.draft||{},text=(d.text||"").trim();
+  if(!text&&!d.blob&&!d.quoteOf){S.perr=true;render();document.getElementById("pText").focus();return}
+  if(text.length>280)return toast("Keep it under 280 characters.");
+  S.posting=true;render();
+  try{const par=d.replyTo&&byId(d.replyTo),tag=par?.tag||d.tag||picks()[0]||"Photography";
+   const post={author:S.me.id,tag,text,createdAt:now(),...(d.replyTo?{replyTo:d.replyTo}:{}),...(d.quoteOf?{quoteOf:d.quoteOf}:{}),...(await uploadDraft(d))};
+   const id=newId();await Store.set("posts",id,post);if(!d.replyTo&&!picks().includes(tag))setPick(tag,true);
+   const first=!S.mine.posted;S.mine.posted=true;saveMine();S.draft=null;S.posting=false;S.perr=false;S.home="foryou";go("home");
+   if(first&&!d.replyTo){const n=pickedBy(tag);celebrate("check","You're live",`Your first post is in ${tag}${n>1?`, where ${n} people will see it`:""}.`)}else toast(d.replyTo?"Reply sent":d.quoteOf?"Quote posted":`Posted to ${tag}`)}
+  catch(err){console.warn(err);S.posting=false;render();toast(err?.code==="too_large"?"That file is too large. Try a smaller one.":err?.code==="storage_full"?"Your phone is out of space for PickD. Delete some posts and try again.":"Your post did not send. Check your connection and try again.")}}
+});
+async function shareStory(){syncDraft();const d=S.draft||{};if(!d.blob&&!(d.stext||"").trim())return toast("Add a photo or type something first.");
+ S.posting=true;render();
+ try{const m=await uploadDraft(d);const st={author:S.me.id,createdAt:now(),...(d.blob?m:{text:d.stext.trim().slice(0,160),color:d.color||STORY_COLORS[0]})};
+  await Store.set("stories",newId(),st);S.draft=null;S.posting=false;S.ctab="post";S.home="following";go("home");toast("Your story is up for 24 hours")}
+ catch(err){console.warn(err);S.posting=false;render();toast("Your story did not share. Try again.")}}
+window.addEventListener("beforeunload",e=>{if(S.tab==="create"&&(S.draft?.text||S.draft?.blob||S.draft?.stext)&&!S.posting)e.preventDefault()});
+boot();
+const NATIVE=!!window.Capacitor?.isNativePlatform?.();
+if(NATIVE){try{window.Capacitor.Plugins.StatusBar?.setStyle({style:"DARK"}).catch(()=>{})}catch{}}
+else if("serviceWorker"in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(e=>console.warn(e)));
+(()=>{const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;let off=false;try{off=!!localStorage.getItem("pickd:installHint")}catch{}
+ const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+ if(!NATIVE&&!standalone&&ios&&!off)setTimeout(()=>{document.getElementById("install").hidden=false},1500);
+ document.getElementById("installX").addEventListener("click",()=>{document.getElementById("install").hidden=true;try{localStorage.setItem("pickd:installHint","1")}catch{}})})();
+</script>
+</body>
+</html>

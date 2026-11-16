@@ -1,0 +1,11 @@
+{
+  "appId": "com.pickd.testapp",
+  "appName": "PickD",
+  "webDir": "www",
+  "backgroundColor": "#0F0F14",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0F0F14",
+    "scrollEnabled": false
+  }
+}
